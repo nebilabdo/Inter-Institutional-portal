@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-background text-foreground transition-colors duration-300 ease-in-out;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* 🌞 Light Mode */
+    --background: 30 60% 94%;
+    --foreground: 30 40% 20%;
+    --card: 30 60% 98%;
+    --card-foreground: 30 40% 20%;
+    --popover: 30 60% 97%;
+    --popover-foreground: 30 40% 20%;
+
+    --primary: 30 40% 30%;
+    --primary-foreground: 30 30% 98%;
+    --secondary: 30 30% 88%;
+    --secondary-foreground: 30 40% 20%;
+
+    --muted: 30 30% 85%;
+    --muted-foreground: 30 15% 35%;
+    --accent: 30 40% 80%;
+    --accent-foreground: 30 40% 20%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 30 30% 85%;
+    --input: 30 30% 85%;
+    --ring: 30 30% 30%;
+    --radius: 0.5rem;
+
+    --chart-1: 25 70% 60%;
+    --chart-2: 40 50% 55%;
+    --chart-3: 15 45% 40%;
+    --chart-4: 30 80% 70%;
+    --chart-5: 35 85% 60%;
+
+    --sidebar-background: 30 40% 96%;
+    --sidebar-foreground: 30 40% 20%;
+    --sidebar-primary: 30 40% 30%;
+    --sidebar-primary-foreground: 30 30% 98%;
+    --sidebar-accent: 30 30% 88%;
+    --sidebar-accent-foreground: 30 40% 20%;
+    --sidebar-border: 30 30% 85%;
+    --sidebar-ring: 30 60% 40%;
+  }
+
+  .dark {
+    --background: 236 17% 23%; /* #333446 */
+    --foreground: 180 14% 95%; /* #F5F8F8 - soft white for main text */
+
+    --card: 236 17% 28%; /* #3B3C52 */
+    --card-foreground: 180 14% 95%;
+
+    --popover: 236 17% 30%;
+    --popover-foreground: 180 14% 95%;
+
+    --primary: 215 17% 59%; /* #7F8CAA */
+    --primary-foreground: 236 17% 23%;
+
+    --secondary: 175 23% 75%; /* #B8CFCE */
+    --secondary-foreground: 236 17% 23%;
+
+    --muted: 236 17% 35%;
+    --muted-foreground: 180 14% 70%; /* Softer text for placeholders */
+
+    --accent: 175 23% 75%;
+    --accent-foreground: 236 17% 23%;
+
+    --destructive: 0 72% 50%; /* Standard red */
+    --destructive-foreground: 180 14% 95%;
+
+    --border: 215 17% 59%;
+    --input: 236 17% 30%;
+    --ring: 215 17% 59%;
+
+    /* Extra: Hierarchical Text Colors */
+    --heading: 180 14% 97%; /* Nearly white */
+    --subtle: 180 14% 85%; /* Light gray-blue */
+    --link: 175 45% 70%; /* Muted teal */
+
+    /* Sidebar */
+    --sidebar-background: 236 17% 20%;
+    --sidebar-foreground: 180 14% 95%;
+    --sidebar-primary: 215 17% 59%;
+    --sidebar-primary-foreground: 236 17% 23%;
+    --sidebar-accent: 175 23% 75%;
+    --sidebar-accent-foreground: 236 17% 23%;
+    --sidebar-border: 236 17% 30%;
+    --sidebar-ring: 215 17% 59%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+@keyframes sprinkle {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) scale(0.5) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-sprinkle {
+  position: absolute;
+  border-radius: 50%;
+  animation-name: sprinkle;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+html {
+  scroll-behavior: smooth;
+}

@@ -1,0 +1,996 @@
+"use client";
+
+import type React from "react";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Building2,
+  Plus,
+  Eye,
+  Settings,
+  Search,
+  User,
+  Activity,
+  AlertTriangle,
+  X,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { usePathname } from "next/navigation";
+import RegisterInstitutionForm from "./RegisterInstitutionForm";
+
+export default function InstitutionsPage() {
+  const pathname = usePathname();
+  const [institutionSearchQuery, setInstitutionSearchQuery] = useState("");
+  const [institutionStatusFilter, setInstitutionStatusFilter] = useState("all");
+  const [institutionTypeFilter, setInstitutionTypeFilter] = useState("all");
+  const [currentInstitutionsPage, setCurrentInstitutionsPage] = useState(1);
+  const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
+  const [openInstitutionDialog, setOpenInstitutionDialog] = useState<
+    null | "view" | "edit" | "activity" | "suspend"
+  >(null);
+  const [openRegisterDialog, setOpenRegisterDialog] = useState(false);
+  const [institutions, setInstitutions] = useState<any[]>([]); // If not already present
+
+  if (pathname === "/notifications") return null;
+
+  const institutionsData = [
+    {
+      id: "INST-001",
+      name: "Immigration and Citizenship Service (ICS)",
+      type: "Government Service",
+      status: "Active",
+      registrationDate: "2023-08-15",
+      contactPerson: "Alemayehu Tadesse",
+      email: "alemayehu.tadesse@ics.gov.et",
+      phone: "+251-11-551-0123",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Consumer"],
+      totalRequests: 45,
+      answeredRequests: 0,
+      successRate: "98.2%",
+      lastActivity: "2024-01-15 16:45:00",
+      services: [
+        "Visa Application",
+        "Residence Permit",
+        "Citizenship Registration",
+        "Passport Renewal",
+        "Work Permit",
+        "Family Reunification",
+        "Refugee Status",
+        "Travel Document",
+        "Legalization of Documents",
+      ],
+    },
+    {
+      id: "INST-002",
+      name: "Ministry of Foreign Affairs (MoFA)",
+      type: "Government Ministry",
+      status: "Active",
+      registrationDate: "2023-06-20",
+      contactPerson: "Hanan Mohammed",
+      email: "hanan.mohammed@mofa.gov.et",
+      phone: "+251-11-551-0124",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Producer"],
+      totalRequests: 0,
+      answeredRequests: 156,
+      successRate: "99.1%",
+      lastActivity: "2024-01-15 14:32:15",
+      services: [
+        "Diplomatic Passport Issuance",
+        "Consular Services",
+        "International Treaties",
+      ],
+    },
+    {
+      id: "INST-003",
+      name: "Ministry of Revenue (MoR)",
+      type: "Government Ministry",
+      status: "Active",
+      registrationDate: "2023-09-10",
+      contactPerson: "Dawit Bekele",
+      email: "dawit.bekele@mor.gov.et",
+      phone: "+251-11-551-0125",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Consumer"],
+      totalRequests: 32,
+      answeredRequests: 0,
+      successRate: "96.8%",
+      lastActivity: "2024-01-15 16:45:00",
+      services: ["Tax Collection", "Customs Clearance"],
+    },
+    {
+      id: "INST-004",
+      name: "Ethiopian Investment Commission (EIC)",
+      type: "Government Commission",
+      status: "Pending",
+      registrationDate: "2023-07-05",
+      contactPerson: "Meron Teshome",
+      email: "meron.teshome@eic.gov.et",
+      phone: "+251-11-551-0126",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Producer"],
+      totalRequests: 0,
+      answeredRequests: 89,
+      successRate: "97.5%",
+      lastActivity: "2024-01-15 12:30:00",
+      services: [
+        "Investment Licensing",
+        "Investor Support",
+        "Project Monitoring",
+      ],
+    },
+    {
+      id: "INST-005",
+      name: "Ministry of Health (MoH)",
+      type: "Government Ministry",
+      status: "Active",
+      registrationDate: "2023-10-12",
+      contactPerson: "Tigist Hailu",
+      email: "tigist.hailu@moh.gov.et",
+      phone: "+251-11-551-0127",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Consumer"],
+      totalRequests: 28,
+      answeredRequests: 0,
+      successRate: "94.3%",
+      lastActivity: "2024-01-14 11:30:00",
+      services: ["Hospital Accreditation", "Disease Surveillance"],
+    },
+    {
+      id: "INST-006",
+      name: "National ID",
+      type: "Government Service",
+      status: "Suspended",
+      registrationDate: "2023-05-18",
+      contactPerson: "Yohannes Girma",
+      email: "yohannes.girma@nationalid.gov.et",
+      phone: "+251-11-551-0128",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Producer"],
+      totalRequests: 0,
+      answeredRequests: 67,
+      successRate: "98.9%",
+      lastActivity: "2024-01-14 11:30:00",
+      services: ["National ID Issuance", "ID Verification", "Data Correction"],
+    },
+    {
+      id: "INST-007",
+      name: "Ethio Telecom",
+      type: "Telecommunications",
+      status: "Active",
+      registrationDate: "2023-04-22",
+      contactPerson: "Selamawit Desta",
+      email: "selamawit.desta@ethiotelecom.et",
+      phone: "+251-11-551-0129",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Consumer", "Producer"],
+      totalRequests: 134,
+      answeredRequests: 100,
+      successRate: "99.5%",
+      lastActivity: "2024-01-15 18:20:00",
+      services: [
+        "Mobile Services",
+        "Internet Services",
+        "Fixed Line",
+        "Enterprise Solutions",
+        "Mobile Money",
+        "International Roaming",
+        "Customer Support",
+        "Device Sales",
+        "Broadband",
+      ],
+    },
+    {
+      id: "INST-008",
+      name: "Ethiopian Public Health Institute (EPHI)",
+      type: "Government Institute",
+      status: "Active",
+      registrationDate: "2023-03-08",
+      contactPerson: "Mulugeta Assefa",
+      email: "mulugeta.assefa@ephi.gov.et",
+      phone: "+251-11-551-0130",
+      address: "Addis Ababa, Ethiopia",
+      roles: ["Producer"],
+      totalRequests: 0,
+      answeredRequests: 445,
+      successRate: "99.8%",
+      lastActivity: "2024-01-12 08:05:00",
+      services: ["Lab Testing", "Disease Research", "Public Health Training"],
+    },
+  ];
+
+  // Combine static and dynamic institutions, with new ones first
+  const allInstitutions = [...institutions, ...institutionsData];
+  const filteredInstitutions = allInstitutions.filter((institution) => {
+    const matchesSearch =
+      institution.name
+        .toLowerCase()
+        .includes(institutionSearchQuery.toLowerCase()) ||
+      institution.contactPerson
+        .toLowerCase()
+        .includes(institutionSearchQuery.toLowerCase()) ||
+      institution.email
+        .toLowerCase()
+        .includes(institutionSearchQuery.toLowerCase());
+    const matchesStatus =
+      institutionStatusFilter === "" ||
+      institutionStatusFilter === "all" ||
+      institution.status === institutionStatusFilter;
+    const matchesType =
+      institutionTypeFilter === "" ||
+      institutionTypeFilter === "all" ||
+      institution.type === institutionTypeFilter;
+    return matchesSearch && matchesStatus && matchesType;
+  });
+  const institutionsPerPage = 5;
+  const totalInstitutionsPages = Math.ceil(
+    filteredInstitutions.length / institutionsPerPage
+  );
+  const paginatedInstitutions = filteredInstitutions.slice(
+    (currentInstitutionsPage - 1) * institutionsPerPage,
+    currentInstitutionsPage * institutionsPerPage
+  );
+
+  return (
+    <div className="space-y-8 px-4 md:px-6 lg:px-12 py-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <Building2 className="w-6 h-6 text-gray-700" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Institutions
+          </h1>
+        </div>
+        <Button
+          className="bg-gray-800 text-white hover:bg-gray-900 w-full sm:w-auto"
+          onClick={() => setOpenRegisterDialog(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Register New Institution
+        </Button>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search by institution name, contact person, or email..."
+            className="pl-10 w-full"
+            value={institutionSearchQuery}
+            onChange={(e) => setInstitutionSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select
+          value={institutionStatusFilter}
+          onValueChange={setInstitutionStatusFilter}
+        >
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={institutionTypeFilter}
+          onValueChange={setInstitutionTypeFilter}
+        >
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="Government Service">
+              Government Service
+            </SelectItem>
+            <SelectItem value="Government Ministry">
+              Government Ministry
+            </SelectItem>
+            <SelectItem value="Government Commission">
+              Government Commission
+            </SelectItem>
+            <SelectItem value="Telecommunications">
+              Telecommunications
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Institutions Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Institution
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Requests
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Activity
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedInstitutions.length > 0 ? (
+                  paginatedInstitutions.map((institution) => (
+                    <tr key={institution.id}>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {institution.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {institution.id}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {institution.type}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <Badge
+                          className={
+                            institution.status === "Active"
+                              ? "bg-green-100 text-green-800"
+                              : institution.status === "Pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }
+                        >
+                          {institution.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                        {institution.totalRequests}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {institution.lastActivity}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedInstitution(institution);
+                              setOpenInstitutionDialog("view");
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Settings className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInstitution(institution);
+                                  setOpenInstitutionDialog("edit");
+                                }}
+                              >
+                                <User className="w-4 h-4 mr-2" /> Edit Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInstitution(institution);
+                                  setOpenInstitutionDialog("activity");
+                                }}
+                              >
+                                <Activity className="w-4 h-4 mr-2" /> View
+                                Activity
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInstitution(institution);
+                                  setOpenInstitutionDialog("suspend");
+                                }}
+                                className="text-red-600 focus:text-red-700"
+                              >
+                                <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />{" "}
+                                Suspend
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-4 text-center text-gray-500"
+                    >
+                      No institutions found matching your criteria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {totalInstitutionsPages > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
+          <p className="text-sm text-gray-700">
+            Showing{" "}
+            {Math.min(
+              paginatedInstitutions.length,
+              (currentInstitutionsPage - 1) * institutionsPerPage + 1
+            )}
+            -
+            {Math.min(
+              currentInstitutionsPage * institutionsPerPage,
+              filteredInstitutions.length
+            )}{" "}
+            of {filteredInstitutions.length} institutions
+          </p>
+          <div className="flex items-center space-x-2 flex-wrap justify-center sm:justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setCurrentInstitutionsPage((prev) => Math.max(1, prev - 1))
+              }
+              disabled={currentInstitutionsPage === 1}
+            >
+              Previous
+            </Button>
+            {Array.from({ length: totalInstitutionsPages }, (_, i) => (
+              <Button
+                key={i + 1}
+                variant={
+                  currentInstitutionsPage === i + 1 ? "default" : "outline"
+                }
+                size="sm"
+                onClick={() => setCurrentInstitutionsPage(i + 1)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setCurrentInstitutionsPage((prev) =>
+                  Math.min(totalInstitutionsPages, prev + 1)
+                )
+              }
+              disabled={currentInstitutionsPage === totalInstitutionsPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {selectedInstitution && (
+        <>
+          <Dialog
+            open={openInstitutionDialog === "view"}
+            onOpenChange={() => setOpenInstitutionDialog(null)}
+          >
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  Institution Details: {selectedInstitution.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Comprehensive information about this institution.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Basic Information */}
+                <div>
+                  <h2 className="text-xl font-bold mb-2">Basic Information</h2>
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Institution ID:{" "}
+                      </span>
+                      <span className="text-blue-700 font-mono underline cursor-pointer">
+                        {selectedInstitution.id}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Name:{" "}
+                      </span>
+                      <span className="text-gray-900 font-medium">
+                        {selectedInstitution.name}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Type:{" "}
+                      </span>
+                      <span className="text-gray-900">
+                        {selectedInstitution.type}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Status:{" "}
+                      </span>
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                        {selectedInstitution.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Contact Information */}
+                <div>
+                  <h2 className="text-xl font-bold mb-2">
+                    Contact Information
+                  </h2>
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Contact Person:{" "}
+                      </span>
+                      <span className="text-gray-900">
+                        {selectedInstitution.contactPerson}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Email:{" "}
+                      </span>
+                      <span className="text-gray-900">
+                        {selectedInstitution.email}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Phone:{" "}
+                      </span>
+                      <span className="text-gray-900">
+                        {selectedInstitution.phone}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">
+                        Address:{" "}
+                      </span>
+                      <span className="text-gray-900">
+                        {selectedInstitution.address}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Services Section */}
+              <div>
+                <h2 className="text-xl font-bold mb-2">Services</h2>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <ul className="list-disc list-inside space-y-1">
+                    {selectedInstitution.services.map(
+                      (service: string, idx: number) => (
+                        <li key={idx} className="text-gray-900">
+                          {service}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Details Dialog */}
+          <Dialog
+            open={openInstitutionDialog === "edit"}
+            onOpenChange={() => setOpenInstitutionDialog(null)}
+          >
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  Edit Institution: {selectedInstitution.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Edit institution details and manage services.
+                </DialogDescription>
+              </DialogHeader>
+              {/* Edit Form */}
+              <EditInstitutionForm
+                institution={selectedInstitution}
+                onSave={(updated) => {
+                  // Simulate update in local state
+                  setOpenInstitutionDialog(null);
+                  // Optionally update the institution in the list if you want
+                }}
+                onCancel={() => setOpenInstitutionDialog(null)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* View Activity Dialog */}
+          <Dialog
+            open={openInstitutionDialog === "activity"}
+            onOpenChange={() => setOpenInstitutionDialog(null)}
+          >
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  Institution Activity - {selectedInstitution.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Recent activity and statistics for {selectedInstitution.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto">
+                {[
+                  {
+                    type: "request",
+                    time: "2024-01-11 00:00:00",
+                    message: `Requested something from ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "success",
+                    time: "2024-01-11 01:01:00",
+                    message: `Responded something to ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "request",
+                    time: "2024-01-11 02:02:00",
+                    message: `Requested something from ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "success",
+                    time: "2024-01-12 03:03:00",
+                    message: `Responded something to ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "request",
+                    time: "2024-01-12 04:04:00",
+                    message: `Requested something from ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "success",
+                    time: "2024-01-13 05:05:00",
+                    message: `Responded something to ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "request",
+                    time: "2024-01-13 06:06:00",
+                    message: `Requested something from ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "success",
+                    time: "2024-01-14 07:07:00",
+                    message: `Responded something to ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "request",
+                    time: "2024-01-14 08:08:00",
+                    message: `Requested something from ${selectedInstitution.name}`,
+                  },
+                  {
+                    type: "success",
+                    time: "2024-01-15 09:09:00",
+                    message: `Responded something to ${selectedInstitution.name}`,
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-4 bg-gray-50 rounded-xl p-4"
+                  >
+                    <div
+                      className={`w-10 h-10 flex items-center justify-center rounded-full text-white text-lg font-bold ${
+                        item.type === "request" ? "bg-blue-500" : "bg-green-500"
+                      }`}
+                    >
+                      {item.type === "request" ? "R" : "S"}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {item.time}
+                      </div>
+                      <div className="text-base text-gray-900 font-medium">
+                        {item.message}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Suspend Confirmation Dialog */}
+          <Dialog
+            open={openInstitutionDialog === "suspend"}
+            onOpenChange={() => setOpenInstitutionDialog(null)}
+          >
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Suspend Institution</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to suspend {selectedInstitution.name}?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenInstitutionDialog(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setOpenInstitutionDialog(null);
+                    alert(`Institution ${selectedInstitution.name} suspended!`);
+                  }}
+                >
+                  Suspend
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+
+      {/* Registration Dialog */}
+      <Dialog open={openRegisterDialog} onOpenChange={setOpenRegisterDialog}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register New Institution</DialogTitle>
+            <DialogDescription>
+              Fill in the details to register a new institution.
+            </DialogDescription>
+          </DialogHeader>
+          <RegisterInstitutionForm
+            onRegister={(inst) => {
+              setInstitutions((prev) => [
+                {
+                  ...inst,
+                  id: `INST-${Date.now()}`,
+                  totalRequests: 0,
+                  answeredRequests: 0,
+                  successRate: "-",
+                  lastActivity: new Date()
+                    .toISOString()
+                    .slice(0, 16)
+                    .replace("T", " "),
+                  registrationDate: new Date().toISOString().slice(0, 10),
+                  roles: ["Consumer"],
+                },
+                ...prev,
+              ]);
+              setOpenRegisterDialog(false);
+            }}
+            onCancel={() => setOpenRegisterDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function EditInstitutionForm({
+  institution,
+  onSave,
+  onCancel,
+}: {
+  institution: any;
+  onSave: (inst: any) => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    ...institution,
+    services: [...institution.services],
+  });
+  const [newService, setNewService] = useState("");
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleServiceAdd = () => {
+    if (newService.trim()) {
+      setForm({ ...form, services: [...form.services, newService.trim()] });
+      setNewService("");
+    }
+  };
+
+  const handleServiceRemove = (idx: number) => {
+    setForm({
+      ...form,
+      services: form.services.filter((_: any, i: number) => i !== idx),
+    });
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(form);
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium mb-1">
+          Name
+        </label>
+        <Input
+          id="name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <label htmlFor="type" className="block text-sm font-medium mb-1">
+          Type
+        </label>
+        <Input
+          id="type"
+          name="type"
+          value={form.type}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <label htmlFor="status" className="block text-sm font-medium mb-1">
+          Status
+        </label>
+        <Select
+          value={form.status}
+          onValueChange={(value) => setForm({ ...form, status: value })}
+        >
+          <SelectTrigger id="status" className="w-full">
+            <SelectValue placeholder="Select Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label
+          htmlFor="contactPerson"
+          className="block text-sm font-medium mb-1"
+        >
+          Contact Person
+        </label>
+        <Input
+          id="contactPerson"
+          name="contactPerson"
+          value={form.contactPerson}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email
+        </label>
+        <Input
+          id="email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium mb-1">
+          Phone
+        </label>
+        <Input
+          id="phone"
+          name="phone"
+          value={form.phone}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <label htmlFor="address" className="block text-sm font-medium mb-1">
+          Address
+        </label>
+        <Input
+          id="address"
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+          className="w-full"
+        />
+      </div>
+      {/* Services Section */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Services</label>
+        <div className="space-y-2">
+          {form.services.map((service: string, idx: number) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="flex-1 text-sm">{service}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+                onClick={() => handleServiceRemove(idx)}
+              >
+                <X className="w-4 h-4 mr-1" /> Remove
+              </Button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <Input
+              type="text"
+              value={newService}
+              onChange={(e) => setNewService(e.target.value)}
+              placeholder="Add new service"
+              className="flex-1"
+            />
+            <Button type="button" onClick={handleServiceAdd}>
+              Add
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">Save</Button>
+      </div>
+    </form>
+  );
+}
