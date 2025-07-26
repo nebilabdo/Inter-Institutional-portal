@@ -1,7 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { jwtVerify } from "jose";
 
-export default async function DashboardLayout({
+const JWT_SECRET = process.env.JWT_SECRET || "secret";
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -9,16 +12,23 @@ export default async function DashboardLayout({
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
-  // If no token, redirect immediately on the server
   if (!token) {
     redirect("/login");
   }
 
-  return (
-    <div className="dashboard-layout">
-      {/* Sidebar component can go here */}
-      <aside>Sidebar</aside>
-      <main>{children}</main>
-    </div>
-  );
+  try {
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(JWT_SECRET)
+    );
+
+    // Check role for admin
+    if (payload.role !== "admin") {
+      redirect("/login");
+    }
+  } catch (err) {
+    redirect("/login");
+  }
+
+  return <>{children}</>;
 }
