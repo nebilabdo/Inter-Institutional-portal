@@ -9,6 +9,7 @@ const consumerRoutes = require("./routes/consumer");
 const providerRoutes = require("./routes/provider");
 const institutionRoutes = require("./routes/institution");
 const requestRoutes = require("./routes/request");
+const notificationsRoutes = require("./routes/notifications");
 
 const app = express();
 app.use(logMiddleware);
@@ -30,6 +31,13 @@ app.use("/consumer", consumerRoutes);
 app.use("/provider", providerRoutes);
 app.use("/api/", institutionRoutes);
 app.use("/api/requests", requestRoutes);
+
+app.use(
+  "/api/requests/:id/notifications",
+  notificationsRoutes.requestNotificationsRouter
+);
+
+app.use("/api/notifications", notificationsRoutes.readRouter);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () =>
