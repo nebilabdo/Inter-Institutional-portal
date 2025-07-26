@@ -3,43 +3,47 @@ const bcrypt = require("bcryptjs");
 const auditLog = require("../Utils/auditLogger");
 
 exports.createInstitution = (req, res) => {
-  const {
-    name,
-    focal_person_name,
-    focal_person_email,
-    focal_person_phone,
-    address,
-    contact_info,
-    organization_type,
-  } = req.body;
+  const { name, type, contactPerson, email, phone, address, services, status } =
+    req.body;
 
-  if (
-    !name ||
-    !focal_person_name ||
-    !focal_person_email ||
-    !focal_person_phone ||
-    !address ||
-    !contact_info ||
-    !organization_type
-  ) {
-    return res.status(400).json({ message: "All fields are required" });
+  if (!name || !type || !contactPerson || !email || !phone || !address) {
+    return res
+      .status(400)
+      .json({ message: "All required fields must be filled." });
   }
 
+  const contact_info = Array.isArray(services) ? services.join(", ") : "";
+  const servicesJSON = Array.isArray(services)
+    ? JSON.stringify(services)
+    : null;
+
   const query = `
-  INSERT INTO institutions (
-    name, focal_person_name, focal_person_email, focal_person_phone,
-    organization_type, address, contact_info, approved, created_at, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())
-`;
+    INSERT INTO institutions (
+      name,
+      organization_type,
+      focal_person_name,
+      focal_person_email,
+      focal_person_phone,
+      address,
+      contact_info,
+      services,
+      status,
+      approved,
+      created_at,
+      updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())
+  `;
 
   const values = [
     name,
-    focal_person_name,
-    focal_person_email,
-    focal_person_phone,
-    organization_type,
+    type,
+    contactPerson,
+    email,
+    phone,
     address,
     contact_info,
+    servicesJSON,
+    status || "Active",
   ];
 
   db.query(query, values, (err, result) => {

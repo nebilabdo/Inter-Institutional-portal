@@ -58,11 +58,56 @@ export default function RegisterInstitutionForm({
   return (
     <div className="flex flex-col rounded-2xl shadow-lg bg-transparent w-full max-w-xl mx-auto items-center justify-center">
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          onRegister(form);
+
+          const payload = {
+            name: form.name,
+            type: form.type,
+            contactPerson: form.contactPerson,
+            email: form.email,
+            phone: form.phone,
+            address: form.address,
+            services: form.services,
+            status: form.status,
+          };
+
+          try {
+            const token = localStorage.getItem("token");
+
+            const response = await fetch(
+              "http://localhost:5000/api/admin/institutions",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+              }
+            );
+
+            if (response.status === 401 || response.status === 403) {
+              localStorage.removeItem("token");
+              alert("Session expired. Please log in again.");
+              window.location.href = "/login";
+              return;
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              alert(data.message || "Failed to register institution");
+              return;
+            }
+
+            alert("Institution registered successfully");
+            onRegister(data); // You can call the parent handler here if needed
+          } catch (error) {
+            console.error("Error submitting form:", error);
+            alert("Network error. Please try again.");
+          }
         }}
-        className="w-full bg-white p-10 md:p-16 space-y-10 md:space-y-12 max-w-xl"
       >
         <div>
           <label htmlFor="name" className="block text-lg font-bold mb-2">

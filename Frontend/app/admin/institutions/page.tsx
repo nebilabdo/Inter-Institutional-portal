@@ -3,6 +3,8 @@
 import type React from "react";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import RegisterInstitutionForm from "./RegisterInstitutionForm";
+import router from "next/router";
 
 export default function InstitutionsPage() {
   const pathname = usePathname();
@@ -52,204 +55,78 @@ export default function InstitutionsPage() {
     null | "view" | "edit" | "activity" | "suspend"
   >(null);
   const [openRegisterDialog, setOpenRegisterDialog] = useState(false);
-  const [institutions, setInstitutions] = useState<any[]>([]); // If not already present
+  const [institutions, setInstitutions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   if (pathname === "/notifications") return null;
 
-  const institutionsData = [
-    {
-      id: "INST-001",
-      name: "Immigration and Citizenship Service (ICS)",
-      type: "Government Service",
-      status: "Active",
-      registrationDate: "2023-08-15",
-      contactPerson: "Alemayehu Tadesse",
-      email: "alemayehu.tadesse@ics.gov.et",
-      phone: "+251-11-551-0123",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Consumer"],
-      totalRequests: 45,
-      answeredRequests: 0,
-      successRate: "98.2%",
-      lastActivity: "2024-01-15 16:45:00",
-      services: [
-        "Visa Application",
-        "Residence Permit",
-        "Citizenship Registration",
-        "Passport Renewal",
-        "Work Permit",
-        "Family Reunification",
-        "Refugee Status",
-        "Travel Document",
-        "Legalization of Documents",
-      ],
-    },
-    {
-      id: "INST-002",
-      name: "Ministry of Foreign Affairs (MoFA)",
-      type: "Government Ministry",
-      status: "Active",
-      registrationDate: "2023-06-20",
-      contactPerson: "Hanan Mohammed",
-      email: "hanan.mohammed@mofa.gov.et",
-      phone: "+251-11-551-0124",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Producer"],
-      totalRequests: 0,
-      answeredRequests: 156,
-      successRate: "99.1%",
-      lastActivity: "2024-01-15 14:32:15",
-      services: [
-        "Diplomatic Passport Issuance",
-        "Consular Services",
-        "International Treaties",
-      ],
-    },
-    {
-      id: "INST-003",
-      name: "Ministry of Revenue (MoR)",
-      type: "Government Ministry",
-      status: "Active",
-      registrationDate: "2023-09-10",
-      contactPerson: "Dawit Bekele",
-      email: "dawit.bekele@mor.gov.et",
-      phone: "+251-11-551-0125",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Consumer"],
-      totalRequests: 32,
-      answeredRequests: 0,
-      successRate: "96.8%",
-      lastActivity: "2024-01-15 16:45:00",
-      services: ["Tax Collection", "Customs Clearance"],
-    },
-    {
-      id: "INST-004",
-      name: "Ethiopian Investment Commission (EIC)",
-      type: "Government Commission",
-      status: "Pending",
-      registrationDate: "2023-07-05",
-      contactPerson: "Meron Teshome",
-      email: "meron.teshome@eic.gov.et",
-      phone: "+251-11-551-0126",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Producer"],
-      totalRequests: 0,
-      answeredRequests: 89,
-      successRate: "97.5%",
-      lastActivity: "2024-01-15 12:30:00",
-      services: [
-        "Investment Licensing",
-        "Investor Support",
-        "Project Monitoring",
-      ],
-    },
-    {
-      id: "INST-005",
-      name: "Ministry of Health (MoH)",
-      type: "Government Ministry",
-      status: "Active",
-      registrationDate: "2023-10-12",
-      contactPerson: "Tigist Hailu",
-      email: "tigist.hailu@moh.gov.et",
-      phone: "+251-11-551-0127",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Consumer"],
-      totalRequests: 28,
-      answeredRequests: 0,
-      successRate: "94.3%",
-      lastActivity: "2024-01-14 11:30:00",
-      services: ["Hospital Accreditation", "Disease Surveillance"],
-    },
-    {
-      id: "INST-006",
-      name: "National ID",
-      type: "Government Service",
-      status: "Suspended",
-      registrationDate: "2023-05-18",
-      contactPerson: "Yohannes Girma",
-      email: "yohannes.girma@nationalid.gov.et",
-      phone: "+251-11-551-0128",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Producer"],
-      totalRequests: 0,
-      answeredRequests: 67,
-      successRate: "98.9%",
-      lastActivity: "2024-01-14 11:30:00",
-      services: ["National ID Issuance", "ID Verification", "Data Correction"],
-    },
-    {
-      id: "INST-007",
-      name: "Ethio Telecom",
-      type: "Telecommunications",
-      status: "Active",
-      registrationDate: "2023-04-22",
-      contactPerson: "Selamawit Desta",
-      email: "selamawit.desta@ethiotelecom.et",
-      phone: "+251-11-551-0129",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Consumer", "Producer"],
-      totalRequests: 134,
-      answeredRequests: 100,
-      successRate: "99.5%",
-      lastActivity: "2024-01-15 18:20:00",
-      services: [
-        "Mobile Services",
-        "Internet Services",
-        "Fixed Line",
-        "Enterprise Solutions",
-        "Mobile Money",
-        "International Roaming",
-        "Customer Support",
-        "Device Sales",
-        "Broadband",
-      ],
-    },
-    {
-      id: "INST-008",
-      name: "Ethiopian Public Health Institute (EPHI)",
-      type: "Government Institute",
-      status: "Active",
-      registrationDate: "2023-03-08",
-      contactPerson: "Mulugeta Assefa",
-      email: "mulugeta.assefa@ephi.gov.et",
-      phone: "+251-11-551-0130",
-      address: "Addis Ababa, Ethiopia",
-      roles: ["Producer"],
-      totalRequests: 0,
-      answeredRequests: 445,
-      successRate: "99.8%",
-      lastActivity: "2024-01-12 08:05:00",
-      services: ["Lab Testing", "Disease Research", "Public Health Training"],
-    },
-  ];
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5000/api/admin/institutions",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
-  // Combine static and dynamic institutions, with new ones first
-  const allInstitutions = [...institutions, ...institutionsData];
-  const filteredInstitutions = allInstitutions.filter((institution) => {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          alert("Session expired. Please log in again.");
+          router.push("/login");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch institutions");
+        }
+
+        const data = await response.json();
+        setInstitutions(data);
+      } catch (error) {
+        console.error("Error fetching institutions:", error);
+      }
+    };
+
+    fetchInstitutions();
+  }, [router]);
+
+  const filteredInstitutions = institutions.filter((institution) => {
     const matchesSearch =
-      institution.name
-        .toLowerCase()
-        .includes(institutionSearchQuery.toLowerCase()) ||
-      institution.contactPerson
-        .toLowerCase()
-        .includes(institutionSearchQuery.toLowerCase()) ||
-      institution.email
-        .toLowerCase()
-        .includes(institutionSearchQuery.toLowerCase());
+      (institution.name?.toLowerCase() || "").includes(
+        institutionSearchQuery.toLowerCase()
+      ) ||
+      (institution.contactPerson?.toLowerCase() || "").includes(
+        institutionSearchQuery.toLowerCase()
+      ) ||
+      (institution.email?.toLowerCase() || "").includes(
+        institutionSearchQuery.toLowerCase()
+      );
+
     const matchesStatus =
       institutionStatusFilter === "" ||
       institutionStatusFilter === "all" ||
       institution.status === institutionStatusFilter;
+
     const matchesType =
       institutionTypeFilter === "" ||
       institutionTypeFilter === "all" ||
       institution.type === institutionTypeFilter;
+
     return matchesSearch && matchesStatus && matchesType;
   });
+
   const institutionsPerPage = 5;
+
   const totalInstitutionsPages = Math.ceil(
     filteredInstitutions.length / institutionsPerPage
   );
+
   const paginatedInstitutions = filteredInstitutions.slice(
     (currentInstitutionsPage - 1) * institutionsPerPage,
     currentInstitutionsPage * institutionsPerPage
@@ -670,36 +547,6 @@ export default function InstitutionsPage() {
               </DialogHeader>
               <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto">
                 {[
-                  {
-                    type: "request",
-                    time: "2024-01-11 00:00:00",
-                    message: `Requested something from ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "success",
-                    time: "2024-01-11 01:01:00",
-                    message: `Responded something to ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "request",
-                    time: "2024-01-11 02:02:00",
-                    message: `Requested something from ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "success",
-                    time: "2024-01-12 03:03:00",
-                    message: `Responded something to ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "request",
-                    time: "2024-01-12 04:04:00",
-                    message: `Requested something from ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "success",
-                    time: "2024-01-13 05:05:00",
-                    message: `Responded something to ${selectedInstitution.name}`,
-                  },
                   {
                     type: "request",
                     time: "2024-01-13 06:06:00",
