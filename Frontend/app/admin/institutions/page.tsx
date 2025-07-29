@@ -254,14 +254,15 @@ export default function InstitutionsPage() {
                       <td className="px-4 py-4 whitespace-nowrap">
                         <Badge
                           className={
-                            institution.status === "Active"
+                            institution.status.toLowerCase() === "active"
                               ? "bg-green-100 text-green-800"
-                              : institution.status === "Pending"
+                              : institution.status.toLowerCase() === "pending"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-red-100 text-red-800"
                           }
                         >
-                          {institution.status}
+                          {institution.status.charAt(0).toUpperCase() +
+                            institution.status.slice(1).toLowerCase()}
                         </Badge>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">

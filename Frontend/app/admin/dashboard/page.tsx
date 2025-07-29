@@ -95,10 +95,16 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const activeCount = institutions.filter((i) => i.status === "Active").length;
-  const pendingCount = institutions.filter((i) => i.approved === 0).length;
+  const activeCount = institutions.filter(
+    (i) => i.status?.toLowerCase() === "active"
+  ).length;
+
+  const pendingCount = institutions.filter(
+    (i) => i.status?.toLowerCase() === "pending" && Number(i.approved) === 0
+  ).length;
+
   const suspendedCount = institutions.filter(
-    (i) => i.status === "Suspended"
+    (i) => i.status?.toLowerCase() === "suspended"
   ).length;
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -135,7 +141,7 @@ export default function DashboardPage() {
     },
     {
       title: "Active API Requests",
-      value: "156", // <-- Replace this if you have a real count
+      value: "156",
       change: "+12 this Month",
       icon: FileText,
       color: "bg-yellow-50 hover:bg-yellow-100",
