@@ -32,6 +32,15 @@ app.use("/provider", providerRoutes);
 app.use("/api/", institutionRoutes);
 app.use("/api/requests", requestRoutes);
 
+const notificationsController = require("./controllers/notificationsController");
+
+// Add this BEFORE your app.use("/api/notifications", ...) line:
+app.get("/api/notifications/all", notificationsController.getAllNotifications);
+app.get(
+  "/api/notifications/unread",
+  notificationsController.getUnreadNotifications
+);
+
 app.use(
   "/api/requests/:id/notifications",
   notificationsRoutes.requestNotificationsRouter

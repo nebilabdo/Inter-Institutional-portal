@@ -48,48 +48,8 @@ export default function DashboardPage() {
       localStorage.setItem("activeTab", activeTab);
     }
   }, [activeTab]);
-  const notifications: Notification[] = [
-    {
-      id: 1,
-      type: "error",
-      title: "Data Request Failed",
-      message: "Request REQ-2024-004 failed due to invalid documentation",
-      details:
-        "The request from LendingTree Bank for identity verification failed because 8 out of 23 applications had invalid or insufficient documentation. The provider IdentityVerify Ltd requires updated documents to proceed.",
-      time: "2 minutes ago",
-      read: false,
-    },
-    {
-      id: 2,
-      type: "warning",
-      title: "Request Processing Delay",
-      message: "Request REQ-2024-002 is taking longer than expected",
-      details:
-        "The credit score verification request from FinancePlus is experiencing delays. CreditScore Inc is processing 45 loan applications and expects completion within 2 hours.",
-      time: "1 hour ago",
-      read: false,
-    },
-    {
-      id: 3,
-      type: "success",
-      title: "New Institution Approved",
-      message: "FinTech Solutions Ltd has been approved and activated",
-      details:
-        "FinTech Solutions Ltd (REG-2024-009) has completed all verification requirements and has been approved for both consumer and producer roles. Contact person: Alice Johnson (alice.johnson@fintech.com).",
-      time: "3 hours ago",
-      read: true,
-    },
-    {
-      id: 4,
-      type: "info",
-      title: "Monthly Report Generated",
-      message: "December 2024 system report is now available",
-      details:
-        "The monthly system report for December 2024 has been generated and is available for download. The report includes 156 processed requests, 24 active institutions, and system performance metrics.",
-      time: "1 day ago",
-      read: true,
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
   const stats = [
     {
       title: "Registered Institutions",
@@ -270,16 +230,6 @@ export default function DashboardPage() {
             <Activity className="w-4 h-4" />
             <span>System Activity</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="flex items-center space-x-2"
-          >
-            <Bell className="w-4 h-4" />
-            <span>Notifications</span>
-            <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-              {notifications.filter((n) => !n.read).length}
-            </span>
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="institutions" className="space-y-6">
           <Card>
@@ -432,80 +382,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        <TabsContent value="notifications" className="space-y-6">
-          <div className="bg-white rounded-2xl shadow p-6 border flex flex-col gap-4">
-            <div className="mb-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Bell className="w-7 h-7 text-black" />
-                <span className="font-bold text-2xl text-gray-900">
-                  System Notifications
-                </span>
-              </div>
-              <p className="text-gray-600 text-base">
-                Important alerts and system notifications requiring attention
-              </p>
-            </div>
-            {notifications.map((n) => (
-              <div
-                key={n.id}
-                className={
-                  n.type === "error"
-                    ? "bg-red-50 border border-red-200 rounded-lg p-5"
-                    : n.type === "warning"
-                    ? "bg-yellow-50 border border-yellow-200 rounded-lg p-5"
-                    : n.type === "success"
-                    ? "bg-green-50 border border-green-200 rounded-lg p-5"
-                    : n.type === "info"
-                    ? "bg-blue-50 border border-blue-200 rounded-lg p-5"
-                    : "bg-gray-50 border border-gray-200 rounded-lg p-5"
-                }
-              >
-                <div className="flex items-center gap-3 mb-1">
-                  {n.type === "error" ? (
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
-                  ) : n.type === "warning" ? (
-                    <Clock className="w-6 h-6 text-yellow-600" />
-                  ) : n.type === "success" ? (
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  ) : n.type === "info" ? (
-                    <FileText className="w-6 h-6 text-blue-600" />
-                  ) : null}
-                  <span
-                    className={
-                      n.type === "error"
-                        ? "font-bold text-lg text-red-700"
-                        : n.type === "warning"
-                        ? "font-bold text-lg text-yellow-800"
-                        : n.type === "success"
-                        ? "font-bold text-lg text-green-700"
-                        : n.type === "info"
-                        ? "font-bold text-lg text-blue-700"
-                        : "font-bold text-lg text-gray-900"
-                    }
-                  >
-                    {n.title}
-                  </span>
-                </div>
-                <div
-                  className={
-                    n.type === "error"
-                      ? "text-red-700 text-base"
-                      : n.type === "warning"
-                      ? "text-yellow-900 text-base"
-                      : n.type === "success"
-                      ? "text-green-900 text-base"
-                      : n.type === "info"
-                      ? "text-blue-900 text-base"
-                      : "text-gray-700 text-base"
-                  }
-                >
-                  {n.message}
-                </div>
-                <div className="text-xs mt-2 text-gray-500">{n.time}</div>
-              </div>
-            ))}
-          </div>
         </TabsContent>
       </Tabs>
     </main>

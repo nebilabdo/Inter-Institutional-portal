@@ -92,7 +92,9 @@ export default function RequestsPage() {
       setLoadingNotifications(true);
       setError(null);
       try {
-        const response = await fetch("http://localhost:5000/api/notifications"); // your API endpoint here
+        const response = await fetch(
+          "http://localhost:5000/api/requests/:requestId/notifications"
+        ); // your API endpoint here
         if (!response.ok) {
           throw new Error("Failed to fetch notifications");
         }
@@ -200,7 +202,7 @@ export default function RequestsPage() {
   const handleResumeConversation = async (requestId: string) => {
     try {
       const res = await fetch(
-        `/api/requests/${requestId}/resume-conversation`,
+        `http://localhost:5000/api/requests/${requestId}/resume-conversation`,
         {
           method: "POST",
         }

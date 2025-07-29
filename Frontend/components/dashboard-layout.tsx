@@ -135,8 +135,6 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
     return `/${userRole}/profile`;
   };
 
-  
-
   const navigationItems = getNavigationItems();
   const userInfo = getUserInfo();
 
@@ -193,7 +191,6 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
 
             {/* User Menu & Theme Toggle */}
             <div className="flex items-center space-x-4">
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -233,9 +230,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                       <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    
-                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild></DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={(event) => {

@@ -1,12 +1,12 @@
 export interface Notification {
-  id: string
-  userId: string
-  title: string
-  message: string
-  type: "info" | "success" | "warning" | "error"
-  read: boolean
-  createdAt: string
-  actionUrl?: string
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  read: boolean;
+  createdAt: string;
+  actionUrl?: string;
 }
 
 // Mock notifications data
@@ -31,55 +31,67 @@ const mockNotifications: Notification[] = [
     createdAt: "2024-01-16T09:30:00Z",
     actionUrl: "/provider/requests/pending",
   },
-]
+];
 
-export async function getNotifications(userId: string): Promise<Notification[]> {
+export async function getNotifications(
+  userId: string
+): Promise<Notification[]> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const userNotifications = mockNotifications.filter((n) => n.userId === userId)
-      resolve(userNotifications)
-    }, 100)
-  })
+      const userNotifications = mockNotifications.filter(
+        (n) => n.userId === userId
+      );
+      resolve(userNotifications);
+    }, 100);
+  });
 }
 
-export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
+export async function markNotificationAsRead(
+  notificationId: string
+): Promise<boolean> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const notification = mockNotifications.find((n) => n.id === notificationId)
+      const notification = mockNotifications.find(
+        (n) => n.id === notificationId
+      );
       if (notification) {
-        notification.read = true
-        resolve(true)
+        notification.read = true;
+        resolve(true);
       } else {
-        resolve(false)
+        resolve(false);
       }
-    }, 100)
-  })
+    }, 100);
+  });
 }
 
-export async function createNotification(notification: Omit<Notification, "id" | "createdAt">): Promise<Notification> {
+export async function createNotification(
+  notification: Omit<Notification, "id" | "createdAt">
+): Promise<Notification> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const newNotification: Notification = {
         ...notification,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
-      }
-      mockNotifications.push(newNotification)
-      resolve(newNotification)
-    }, 100)
-  })
+      };
+      mockNotifications.push(newNotification);
+      resolve(newNotification);
+    }, 100);
+  });
 }
 
-export async function deleteNotification(notificationId: string): Promise<boolean> {
+export async function deleteNotification(
+  notificationId: string
+): Promise<boolean> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const index = mockNotifications.findIndex((n) => n.id === notificationId)
+      const index = mockNotifications.findIndex((n) => n.id === notificationId);
       if (index !== -1) {
-        mockNotifications.splice(index, 1)
-        resolve(true)
+        mockNotifications.splice(index, 1);
+        resolve(true);
       } else {
-        resolve(false)
+        resolve(false);
       }
-    }, 100)
-  })
+    }, 100);
+  });
 }
