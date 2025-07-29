@@ -69,6 +69,47 @@ exports.createInstitution = (req, res) => {
   });
 };
 
+exports.getUserStats = (req, res) => {
+  const queryTotal = "SELECT COUNT(*) AS total FROM institutions";
+
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const formattedDate = oneMonthAgo
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const queryRecent = `
+    SELECT COUNT(*) AS recent FROM institutions 
+    WHERE created_at >= ?
+  `;
+
+  db.query(queryTotal, (err1, totalResult) => {
+    if (err1) {
+      console.error("Error fetching total users:", err1);
+      return res.status(500).json({ message: "Failed to fetch user count" });
+    }
+
+    db.query(queryRecent, [formattedDate], (err2, recentResult) => {
+      if (err2) {
+        console.error("Error fetching monthly users:", err2);
+        return res
+          .status(500)
+          .json({ message: "Failed to fetch monthly data" });
+      }
+
+      const totalUsers = totalResult[0].total;
+      const monthlyChange = recentResult[0].recent;
+
+      res.json({
+        totalUsers,
+        change:
+          monthlyChange > 0 ? `+${monthlyChange} this Month` : "0 this Month",
+      });
+    });
+  });
+};
+
 exports.registerInstitutionUser = (req, res) => {
   const { email, password, role, institution_name } = req.body;
 
@@ -156,7 +197,25 @@ exports.getAllUsers = (req, res) => {
 exports.getAllInstitutions = (req, res) => {
   db.query("SELECT * FROM institutions", (err, results) => {
     if (err) return res.status(500).json({ message: "Database error" });
-    res.json(results);
+
+    const total = results.length;
+
+    // Calculate how many were created in the last month
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const recent = results.filter((inst) => {
+      const createdAt = new Date(inst.created_at);
+      return createdAt >= oneMonthAgo;
+    }).length;
+
+    const change = `+${recent} this Month`;
+
+    res.json({
+      institutions: results,
+      total,
+      change,
+    });
   });
 };
 

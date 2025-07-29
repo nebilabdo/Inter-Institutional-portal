@@ -16,8 +16,8 @@ app.use(logMiddleware);
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // your frontend origin
-    credentials: true, // allow cookies/token from browser
+    origin: "http://localhost:3000",
+    credentials: true,
   })
 );
 

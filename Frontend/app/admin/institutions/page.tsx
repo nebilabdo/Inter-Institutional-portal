@@ -87,7 +87,9 @@ export default function InstitutionsPage() {
         }
 
         const data = await response.json();
-        setInstitutions(data);
+        setInstitutions(
+          Array.isArray(data.institutions) ? data.institutions : []
+        );
       } catch (error) {
         console.error("Error fetching institutions:", error);
       }

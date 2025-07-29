@@ -21,12 +21,86 @@ import {
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
-import NotificationsList, {
-  Notification,
-} from "../notifications/NotificationsList";
 import { useRouter } from "next/navigation";
 
+import axios from "axios";
+
+interface Institution {
+  id: number;
+  name: string;
+  status: string;
+  approved: number;
+}
+
 export default function DashboardPage() {
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalUsers, setTotalUsers] = useState<string>("Loading...");
+  const [usersChange, setUsersChange] = useState<string>("");
+
+  const [institutionStats, setInstitutionStats] = useState({
+    total: "Loading...",
+    change: "",
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const institutionsRes = await axios.get(
+          "http://localhost:5000/api/admin/institutions",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // Log the full response data structure here
+        console.log("Institutions API response:", institutionsRes.data);
+
+        // Assuming API returns { institutions: [], total: number, change: string }
+        const institutionsData =
+          institutionsRes.data.institutions || institutionsRes.data;
+
+        if (Array.isArray(institutionsData)) {
+          setInstitutions(institutionsData);
+        } else {
+          setInstitutions([]);
+          console.warn("Institutions data is not an array", institutionsData);
+        }
+
+        setInstitutionStats({
+          total: institutionsRes.data.total?.toString() || "0",
+          change: institutionsRes.data.change || "",
+        });
+
+        const usersRes = await axios.get(
+          "http://localhost:5000/api/admin/user-stats",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setTotalUsers(usersRes.data.totalUsers?.toString() || "0");
+        setUsersChange(usersRes.data.change || "");
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setTotalUsers("Error");
+        setUsersChange("");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const activeCount = institutions.filter((i) => i.status === "Active").length;
+  const pendingCount = institutions.filter((i) => i.approved === 0).length;
+  const suspendedCount = institutions.filter(
+    (i) => i.status === "Suspended"
+  ).length;
+
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("activeTab") || "institutions";
@@ -48,13 +122,12 @@ export default function DashboardPage() {
       localStorage.setItem("activeTab", activeTab);
     }
   }, [activeTab]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const stats = [
     {
       title: "Registered Institutions",
-      value: "24",
-      change: "+3 this Month",
+      value: institutionStats.total,
+      change: institutionStats.change,
       icon: Building2,
       color: "bg-blue-50 hover:bg-blue-100",
       iconColor: "text-blue-500",
@@ -62,7 +135,7 @@ export default function DashboardPage() {
     },
     {
       title: "Active API Requests",
-      value: "156",
+      value: "156", // <-- Replace this if you have a real count
       change: "+12 this Month",
       icon: FileText,
       color: "bg-yellow-50 hover:bg-yellow-100",
@@ -71,7 +144,7 @@ export default function DashboardPage() {
     },
     {
       title: "Pending Approvals",
-      value: "8",
+      value: pendingCount.toString(),
       change: "2 Urgent",
       icon: Clock,
       color: "bg-green-50 hover:bg-green-100",
@@ -80,8 +153,8 @@ export default function DashboardPage() {
     },
     {
       title: "Total Users",
-      value: "342",
-      change: "+18 this Month",
+      value: totalUsers,
+      change: usersChange,
       icon: Users,
       color: "bg-purple-50 hover:bg-purple-100",
       iconColor: "text-purple-500",
@@ -251,7 +324,9 @@ export default function DashboardPage() {
                       <p className="font-semibold text-blue-900">
                         Active Institutions
                       </p>
-                      <p className="text-2xl font-bold text-blue-700">22</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {activeCount}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -262,7 +337,9 @@ export default function DashboardPage() {
                       <p className="font-semibold text-amber-900">
                         Pending Approval
                       </p>
-                      <p className="text-2xl font-bold text-amber-700">2</p>
+                      <p className="text-2xl font-bold text-amber-700">
+                        {pendingCount}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -271,7 +348,9 @@ export default function DashboardPage() {
                     <AlertTriangle className="w-8 h-8 text-red-600" />
                     <div>
                       <p className="font-semibold text-red-900">Suspended</p>
-                      <p className="text-2xl font-bold text-red-700">0</p>
+                      <p className="text-2xl font-bold text-red-700">
+                        {suspendedCount}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -322,7 +401,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <h4 className="font-semibold text-gray-900">
                     Activity Details
                   </h4>
@@ -372,13 +451,13 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="bg-gray-50 p-8 rounded-lg text-center">
-                      <Activity className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      {/* <Activity className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500 text-sm">
                         Click on any activity to view detailed information
-                      </p>
+                      // </p> 
                     </div>
                   )}
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

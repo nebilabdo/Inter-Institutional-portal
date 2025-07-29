@@ -11,6 +11,6 @@ router.post("/users/register", adminController.registerInstitutionUser);
 router.put("/institutions/:id/approve", adminController.approveInstitution);
 router.delete("/institutions/:id", adminController.deleteInstitution);
 router.get("/institutions", adminController.getAllInstitutions);
-router.get("/users", adminController.getAllUsers);
+router.get("/user-stats", adminController.getUserStats);
 
 module.exports = router;
