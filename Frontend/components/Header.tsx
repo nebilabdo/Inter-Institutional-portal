@@ -205,6 +205,9 @@ export default function Header() {
     } else {
       await fetchAllNotifications();
     }
+
+    window.dispatchEvent(new Event("global-refresh"));
+
     setIsRefreshing(false);
   };
 

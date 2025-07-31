@@ -3,68 +3,101 @@ const bcrypt = require("bcryptjs");
 const auditLog = require("../Utils/auditLogger");
 
 exports.createInstitution = (req, res) => {
-  const { name, type, contactPerson, email, phone, address, services, status } =
-    req.body;
-
-  if (!name || !type || !contactPerson || !email || !phone || !address) {
-    return res
-      .status(400)
-      .json({ message: "All required fields must be filled." });
-  }
-
-  const contact_info = Array.isArray(services) ? services.join(", ") : "";
-  const servicesJSON = Array.isArray(services)
-    ? JSON.stringify(services)
-    : null;
-
-  const query = `
-    INSERT INTO institutions (
-      name,
-      organization_type,
-      focal_person_name,
-      focal_person_email,
-      focal_person_phone,
-      address,
-      contact_info,
-      services,
-      status,
-      approved,
-      created_at,
-      updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())
-  `;
-
-  const values = [
+  const {
     name,
     type,
     contactPerson,
     email,
     phone,
     address,
-    contact_info,
+    services,
+    status,
+    username,
+    password,
+    confirmPassword,
+  } = req.body;
+
+  if (
+    !name ||
+    !type ||
+    !contactPerson ||
+    !email ||
+    !phone ||
+    !address ||
+    !password ||
+    !confirmPassword
+  ) {
+    return res
+      .status(400)
+      .json({ message: "All required fields must be filled." });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+
+  const bcrypt = require("bcryptjs");
+  const hashedPassword = bcrypt.hashSync(password, 8);
+  const servicesJSON = Array.isArray(services)
+    ? JSON.stringify(services)
+    : null;
+
+  const institutionQuery = `
+    INSERT INTO institutions (
+      name, type, contact_person, email, phone, address,
+      username, password, services, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+  `;
+
+  const institutionValues = [
+    name,
+    type,
+    contactPerson,
+    email,
+    phone,
+    address,
+    username,
+    hashedPassword,
     servicesJSON,
     status || "Active",
   ];
 
-  db.query(query, values, (err, result) => {
+  db.query(institutionQuery, institutionValues, (err, result) => {
     if (err) {
-      console.error("DB INSERT ERROR:", err);
-
       if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({
-          message: "Institution already exists. Duplicate entry not allowed.",
-        });
+        return res.status(400).json({ message: "Institution already exists." });
       }
-
-      return res.status(500).json({
-        message: "Failed to create institution. Please try again later.",
-        error: err.message,
-      });
+      return res
+        .status(500)
+        .json({ message: "Failed to create institution.", error: err.message });
     }
 
-    res.status(201).json({
-      message: "Institution created successfully.",
-      institutionId: result.insertId,
+    const institutionId = result.insertId;
+
+    // Now insert the contact person as a user
+    const userQuery = `
+      INSERT INTO users (email, password_hash, role, institution_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, NOW(), NOW())
+    `;
+
+    const userValues = [email, hashedPassword, "ContactPerson", institutionId];
+
+    db.query(userQuery, userValues, (userErr, userResult) => {
+      if (userErr) {
+        console.error(
+          "Failed to insert contact person into users table:",
+          userErr
+        );
+        return res
+          .status(500)
+          .json({ message: "Institution created but user creation failed." });
+      }
+
+      res.status(201).json({
+        message: "Institution and contact person created successfully.",
+        institutionId,
+        userId: userResult.insertId,
+      });
     });
   });
 };

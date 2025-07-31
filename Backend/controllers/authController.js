@@ -65,11 +65,14 @@ exports.login = (req, res) => {
     if (!valid) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
       {
-        expiresIn: "12h",
-      }
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        institution_id: user.institution_id,
+      },
+      JWT_SECRET,
+      { expiresIn: "12h" }
     );
 
     res.json({ message: "Login successful", token });

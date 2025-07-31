@@ -100,7 +100,7 @@ export default function DashboardPage() {
   ).length;
 
   const pendingCount = institutions.filter(
-    (i) => i.status?.toLowerCase() === "pending" && Number(i.approved) === 0
+    (i) => i.status?.trim().toLowerCase() === "pending"
   ).length;
 
   const suspendedCount = institutions.filter(
@@ -151,7 +151,7 @@ export default function DashboardPage() {
     {
       title: "Pending Approvals",
       value: pendingCount.toString(),
-      change: "2 Urgent",
+      change: `${pendingCount} Pending`,
       icon: Clock,
       color: "bg-green-50 hover:bg-green-100",
       iconColor: "text-green-500",

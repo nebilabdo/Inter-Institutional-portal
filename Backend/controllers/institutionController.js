@@ -13,7 +13,16 @@ exports.getApprovedInstitutions = (req, res) => {
 
 exports.updateInstitutionInfo = (req, res) => {
   const id = req.params.id;
-  const { name, address, contact_info } = req.body;
+  const {
+    name,
+    type,
+    status,
+    contact_person,
+    email,
+    phone,
+    address,
+    services,
+  } = req.body;
 
   const fields = [];
   const values = [];
@@ -22,13 +31,33 @@ exports.updateInstitutionInfo = (req, res) => {
     fields.push("name = ?");
     values.push(name);
   }
+  if (type !== undefined) {
+    fields.push("type = ?");
+    values.push(type);
+  }
+  if (status !== undefined) {
+    fields.push("status = ?");
+    values.push(status);
+  }
+  if (contact_person !== undefined) {
+    fields.push("contact_person = ?");
+    values.push(contact_person);
+  }
+  if (email !== undefined) {
+    fields.push("email = ?");
+    values.push(email);
+  }
+  if (phone !== undefined) {
+    fields.push("phone = ?");
+    values.push(phone);
+  }
   if (address !== undefined) {
     fields.push("address = ?");
     values.push(address);
   }
-  if (contact_info !== undefined) {
-    fields.push("contact_info = ?");
-    values.push(contact_info);
+  if (services !== undefined) {
+    fields.push("services = ?");
+    values.push(JSON.stringify(services)); // assuming services is an array
   }
 
   if (fields.length === 0) {
@@ -44,7 +73,8 @@ exports.updateInstitutionInfo = (req, res) => {
   )}, updated_at = NOW() WHERE id = ?`;
 
   db.query(query, values, (err, result) => {
-    if (err) return res.status(500).json({ message: "Database error" });
+    if (err)
+      return res.status(500).json({ message: "Database error", error: err });
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Institution not found" });
     res.json({ message: "Institution info updated" });

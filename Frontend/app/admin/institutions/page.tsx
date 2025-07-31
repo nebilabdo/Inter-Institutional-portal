@@ -61,41 +61,56 @@ export default function InstitutionsPage() {
   if (pathname === "/notifications") return null;
 
   useEffect(() => {
-    const fetchInstitutions = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          "http://localhost:5000/api/admin/institutions",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem("token");
-          alert("Session expired. Please log in again.");
-          router.push("/login");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch institutions");
-        }
-
-        const data = await response.json();
-        setInstitutions(
-          Array.isArray(data.institutions) ? data.institutions : []
-        );
-      } catch (error) {
-        console.error("Error fetching institutions:", error);
-      }
+    const refreshHandler = () => {
+      fetchData();
     };
 
-    fetchInstitutions();
+    window.addEventListener("global-refresh", refreshHandler);
+    return () => window.removeEventListener("global-refresh", refreshHandler);
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/admin/institutions",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("token");
+        alert("Session expired. Please log in again.");
+        router.push("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch institutions");
+      }
+
+      const data = await response.json();
+
+      const mappedInstitutions = Array.isArray(data.institutions)
+        ? data.institutions.map((inst) => ({
+            ...inst,
+            contactPerson: inst.contact_person || "",
+          }))
+        : [];
+
+      setInstitutions(mappedInstitutions);
+    } catch (error) {
+      console.error("Error fetching institutions:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [router]);
 
   const filteredInstitutions = institutions.filter((institution) => {
@@ -254,15 +269,17 @@ export default function InstitutionsPage() {
                       <td className="px-4 py-4 whitespace-nowrap">
                         <Badge
                           className={
-                            institution.status.toLowerCase() === "active"
+                            institution.status?.toLowerCase() === "active"
                               ? "bg-green-100 text-green-800"
-                              : institution.status.toLowerCase() === "pending"
+                              : institution.status?.toLowerCase() === "pending"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-red-100 text-red-800"
                           }
                         >
-                          {institution.status.charAt(0).toUpperCase() +
-                            institution.status.slice(1).toLowerCase()}
+                          {institution.status
+                            ? institution.status.charAt(0).toUpperCase() +
+                              institution.status.slice(1).toLowerCase()
+                            : "Unknown"}
                         </Badge>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
@@ -308,7 +325,7 @@ export default function InstitutionsPage() {
                                 <Activity className="w-4 h-4 mr-2" /> View
                                 Activity
                               </DropdownMenuItem>
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedInstitution(institution);
                                   setOpenInstitutionDialog("suspend");
@@ -317,7 +334,7 @@ export default function InstitutionsPage() {
                               >
                                 <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />{" "}
                                 Suspend
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -508,91 +525,68 @@ export default function InstitutionsPage() {
           </Dialog>
 
           {/* Edit Details Dialog */}
-          <Dialog
-            open={openInstitutionDialog === "edit"}
-            onOpenChange={() => setOpenInstitutionDialog(null)}
-          >
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  Edit Institution: {selectedInstitution.name}
-                </DialogTitle>
-                <DialogDescription>
-                  Edit institution details and manage services.
-                </DialogDescription>
-              </DialogHeader>
-              {/* Edit Form */}
-              <EditInstitutionForm
-                institution={selectedInstitution}
-                onSave={(updated) => {
-                  // Simulate update in local state
-                  setOpenInstitutionDialog(null);
-                  // Optionally update the institution in the list if you want
-                }}
-                onCancel={() => setOpenInstitutionDialog(null)}
-              />
-            </DialogContent>
-          </Dialog>
+          {openInstitutionDialog === "edit" && (
+            <Dialog open onOpenChange={() => setOpenInstitutionDialog(null)}>
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Institution</DialogTitle>
+                </DialogHeader>
+
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <EditInstitutionForm
+                    institution={selectedInstitution}
+                    onSave={async (updated) => {
+                      try {
+                        const token = localStorage.getItem("token");
+                        const response = await fetch(
+                          `http://localhost:5000/api/institution/${selectedInstitution.id}`,
+                          {
+                            method: "PUT",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify(updated),
+                          }
+                        );
+
+                        if (!response.ok) {
+                          const err = await response.json();
+                          throw new Error(err.message || "Update failed");
+                        }
+
+                        setInstitutions((prev) =>
+                          prev.map((inst) =>
+                            inst.id === selectedInstitution.id
+                              ? { ...inst, ...updated }
+                              : inst
+                          )
+                        );
+
+                        setOpenInstitutionDialog(null);
+                        alert("Institution updated successfully!");
+                      } catch (error) {
+                        console.error("Update error:", error);
+                        alert("Failed to update institution.");
+                      }
+                    }}
+                    onCancel={() => setOpenInstitutionDialog(null)}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
           {/* View Activity Dialog */}
+
           <Dialog
             open={openInstitutionDialog === "activity"}
             onOpenChange={() => setOpenInstitutionDialog(null)}
           >
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  Institution Activity - {selectedInstitution.name}
-                </DialogTitle>
-                <DialogDescription>
-                  Recent activity and statistics for {selectedInstitution.name}.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto">
-                {[
-                  {
-                    type: "request",
-                    time: "2024-01-13 06:06:00",
-                    message: `Requested something from ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "success",
-                    time: "2024-01-14 07:07:00",
-                    message: `Responded something to ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "request",
-                    time: "2024-01-14 08:08:00",
-                    message: `Requested something from ${selectedInstitution.name}`,
-                  },
-                  {
-                    type: "success",
-                    time: "2024-01-15 09:09:00",
-                    message: `Responded something to ${selectedInstitution.name}`,
-                  },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-4 bg-gray-50 rounded-xl p-4"
-                  >
-                    <div
-                      className={`w-10 h-10 flex items-center justify-center rounded-full text-white text-lg font-bold ${
-                        item.type === "request" ? "bg-blue-500" : "bg-green-500"
-                      }`}
-                    >
-                      {item.type === "request" ? "R" : "S"}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-500 mb-1">
-                        {item.time}
-                      </div>
-                      <div className="text-base text-gray-900 font-medium">
-                        {item.message}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <DialogTitle>Institution Activity</DialogTitle>
+
+              {/* your dialog content here */}
             </DialogContent>
           </Dialog>
 

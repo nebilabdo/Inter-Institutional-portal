@@ -1,6 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
+
+type JwtPayload = {
+  id: string;
+  email: string;
+  role: string;
+  exp: number;
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +47,19 @@ export default function LoginPage() {
 
       localStorage.setItem("token", data.token);
 
-      router.push("/admin");
+      // Decode token to get role
+
+      const decoded = jwtDecode<JwtPayload>(data.token);
+
+      const userRole = decoded.role.toLowerCase();
+
+      if (userRole === "admin") {
+        router.push("/admin");
+      } else if (userRole === "contactperson") {
+        router.push("/welcome");
+      } else {
+        router.push("/");
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("Unexpected error. Please try again later.");

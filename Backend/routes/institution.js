@@ -12,7 +12,7 @@ router.get(
 router.put(
   "/institution/:id",
   auth,
-  role("provider"),
+  role("admin"),
   institutionController.updateInstitutionInfo
 );
 
