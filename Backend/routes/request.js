@@ -5,6 +5,7 @@ const controller = require("../controllers/requestController");
 const authMiddleware = require("../middlewares/auth");
 
 router.post("/", authMiddleware, controller.submitRequest);
+router.get("/", controller.getAllRequests);
 
 router.post("/:id/stop-conversation", controller.stopConversation);
 router.post("/:id/resume-conversation", controller.resumeConversation);

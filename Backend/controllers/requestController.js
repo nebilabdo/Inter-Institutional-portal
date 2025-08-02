@@ -85,6 +85,40 @@ exports.stopConversation = (req, res) => {
   );
 };
 
+exports.getAllRequests = (req, res) => {
+  const sql = `SELECT * FROM requests ORDER BY createdAt DESC`;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Failed to fetch requests:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const formatted = results.map((row) => {
+      let parsedServices = [];
+
+      try {
+        parsedServices = JSON.parse(row.services || "[]");
+        if (!Array.isArray(parsedServices)) {
+          parsedServices = [parsedServices]; // force into array
+        }
+      } catch (e) {
+        console.warn("Invalid JSON in services field:", row.services);
+        parsedServices = row.services ? [row.services] : [];
+      }
+
+      return {
+        ...row,
+        services: parsedServices,
+        date: row.createdAt,
+        lastUpdated: row.updatedAt,
+      };
+    });
+
+    res.json(formatted);
+  });
+};
+
 // POST resume conversation
 exports.resumeConversation = (req, res) => {
   const { id } = req.params;

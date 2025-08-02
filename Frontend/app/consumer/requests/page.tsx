@@ -41,15 +41,15 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import Link from "next/link";
 
 interface APIRequest {
-  id: string;
+  id: number;
   institutionId: string;
   institutionName: string;
-  services: string[];
+  services: string[]; // from JSON.parse
   title: string;
   description: string;
   status: "Submitted" | "In Review" | "Approved" | "Rejected" | "Completed";
-  date: string;
-  lastUpdated?: string;
+  date: string; // from createdAt
+  lastUpdated?: string; // from updatedAt
   responseFormat?: string;
   apiEndpoint?: string;
   rejectionReason?: string;
@@ -63,18 +63,23 @@ export default function MyRequestsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadRequests = () => {
+    const loadRequests = async () => {
+      setIsLoading(true);
       try {
-        const savedRequests = JSON.parse(
-          localStorage.getItem("apiRequests") || "[]"
-        );
-        setRequests(savedRequests);
+        const res = await fetch("http://localhost:5000/api/requests", {
+          credentials: "include", // if you're using cookies/session
+        });
+        if (!res.ok) throw new Error("Failed to load requests");
+
+        const data: APIRequest[] = await res.json();
+        setRequests(data);
       } catch (error) {
-        console.error("Error loading requests:", error);
+        console.error("Error fetching requests:", error);
       } finally {
         setIsLoading(false);
       }
     };
+
     loadRequests();
   }, []);
 
