@@ -48,333 +48,22 @@ export default function SubmitRequestPage() {
   const [requestPurpose, setRequestPurpose] = useState("");
   const [responseFormat, setResponseFormat] = useState("");
 
-  const institutions: Institution[] = [
-    {
-      id: "ics-001",
-      name: "Immigration and Citizenship Service (ICS)",
-      status: "active",
-      description: "Manages legal migration, travel documents, and Ethiopian citizenship.",
-      services: [
-        "Emergency Passport Renewal",
-        "Emergency Service for Damaged or Defaced Passports",
-        "Lost or Stolen Passport Replacement",
-        "Emergency Temporary Residence Permit Card Issuance",
-        "Emergency Permanent Residence Permit Card Issuance",
-        "Emergency Investment Visa (IV) Issuance",
-        "Emergency Work Visa (WV) for Private Sector Employment",
-        "Emergency Issuance of Ethiopian Origin ID (Yellow Card)",
-        "Issuance of Ethiopian Origin ID for Individuals Under 18 Years Old"
-      ],
-      apiEndpoint: "https://api.ics.gov.et/v1",
-      logo: "/images/immigirations.jpg",
-    },
-    {
-      id: "mofa-001",
-      name: "Ministry of Foreign Affairs (MoFA)",
-      status: "active",
-      description: "Handles Ethiopia’s international relations and provides document authentication services.",
-      services: ["Document Authentication"],
-      apiEndpoint: "https://api.mofa.gov.et/v1",
-      logo: "/images/foreign.jpg",
-    },
-    {
-      id: "mor-001",
-      name: "Ministry of Revenue (MoR)",
-      status: "active",
-      description: "Responsible for tax collection, customs, and revenue-related services.",
-      services: ["Taxpayer Identification Number (TIN) Registration", "Business Registration Certificate"],
-      apiEndpoint: "https://api.revenue.gov.et/v1",
-      logo: "/images/revenue.jpg",
-    },
-    {
-      id: "dars-001",
-      name: "Documents Authentication and Registration Service (DARS)",
-      status: "active",
-      description: "Authenticates legal documents and registers official contracts and records.",
-      services: [
-        "Authentication of Contract of Loan",
-        "Authentication of Power of Attorney",
-        "Authentication of Contract of Property Sales",
-        "Authentication of Contract of Lease",
-        "Registration of Foreign Document"
-      ],
-      apiEndpoint: "https://api.dars.gov.et/v1",
-      logo: "/images/documents authentication.jpg",
-    },
-    {
-      id: "eaes-001",
-      name: "Educational Assessment and Examination Service (EAES)",
-      status: "active",
-      description: "Administers national exams and certification assessments.",
-      services: [
-        "Educational Document Replacement Certificate",
-        "Educational Document Replacement with True Copy",
-        "Educational Document Authentication",
-        "Giving a Supporting Letter",
-        "Official Transcript",
-        "True Copy"
-      ],
-      apiEndpoint: "https://api.eaes.gov.et/v1",
-      logo: "/images/education.jpg",
-    },
-    {
-      id: "epse-001",
-      name: "Ethiopian Postal Service Enterprise (EPSE)",
-      status: "active",
-      description: "Provides mail, parcel, and national ID delivery services across Ethiopia.",
-      services: [
-        "National ID Card Printing",
-        "National Examination Document Handling"
-      ],
-      apiEndpoint: "https://api.epse.gov.et/v1",
-      logo: "/images/postal.jpg",
-    },
-    {
-      id: "moh-001",
-      name: "Ministry of Health (MoH)",
-      status: "active",
-      description: "Safeguards and improves public health through disease control, immunization, and health programs.",
-      services: [
-        "Medical Treatment Abroad (Non-Transplant)",
-        "Organ Transplant Abroad",
-        "Renewal of Referral Document",
-        "Replacement of Referral Document",
-        "New License",
-        "License Renewal",
-        "Replacement for Lost/Damaged License",
-        "Letter of Good Standing"
-      ],
-      apiEndpoint: "https://api.health.gov.et/v1",
-      logo: "/images/ministryOfHealth.jpg",
-    },
-    {
-      id: "eta-001",
-      name: "Education and Training Authority (ETA)",
-      status: "active",
-      description: "Regulates and assures quality in general, technical, vocational, and higher education.",
-      services: [
-        "Authentication of Educational Credentials",
-        "Equivalence of Educational Credentials"
-      ],
-      apiEndpoint: "https://api.eta.gov.et/v1",
-      logo: "/images/educationsAndTraining.jpg",
-    },
-    {
-      id: "mols-001",
-      name: "Ministry of Labor and Skills (MoLS)",
-      status: "active",
-      description: "Oversees labor affairs, employment policies, and skills development.",
-      services: [
-        "Business Registration Service",
-        "Business License Issuance Service",
-        "Business License Renewal Service"
-      ],
-      apiEndpoint: "https://api.mols.gov.et/v1",
-      logo: "/images/laborAndSkill.jpg",
-    },
-    {
-      id: "nid-001",
-      name: "National ID Program",
-      status: "active",
-      description: "Manages the issuance and updating of National ID cards.",
-      services: [
-        "Registration for National ID",
-        "Updating an Existing National ID",
-        "Accepting Feedback and Inquiries"
-      ],
-      apiEndpoint: "https://api.nid.gov.et/v1",
-      logo: "/images/nationalId.jpg",
-    },
-    {
-      id: "cbe-001",
-      name: "Commercial Bank of Ethiopia (CBE)",
-      status: "active",
-      description: "Provides banking services including account opening and digital banking solutions.",
-      services: [
-        "Account Opening",
-        "Digital Channels (Mobile Banking, CBE Birr, Debit Card, Internet Banking)"
-      ],
-      apiEndpoint: "https://api.cbe.gov.et/v1",
-      logo: "/images/CBE.jpg",
-    },
-    {
-      id: "ethio-telecom-001",
-      name: "Ethio Telecom",
-      status: "active",
-      description: "Provides telecommunications services including mobile money and enterprise solutions.",
-      services: [
-        "Tele Birr Service",
-        "Enterprise Solutions"
-      ],
-      apiEndpoint: "https://api.ethiotelecom.gov.et/v1",
-      logo: "/images/ethioTelecom.jpg",
-    },
-    {
-      id: "eepa-001",
-      name: "Ethiopian Environmental Protection Authority (EEPA)",
-      status: "active",
-      description: "Safeguards Ethiopia’s natural environment through regulations and impact assessments.",
-      services: [
-        "GMO-Free (Non-GMO) Live Organism Certification Service",
-        "Environmental and Social Impact Assessment Approval Service - New License for Organizations",
-        "Environmental and Social Impact Assessment Approval Service - License Renewal for Organizations",
-        "Environmental and Social Impact Assessment Approval Service - License Upgrade for Individuals"
-      ],
-      apiEndpoint: "https://api.eepa.gov.et/v1",
-      logo: "/images/enviromentalProtection.jpg",
-    },
-    {
-      id: "moj-001",
-      name: "Ministry of Justice (MoJ)",
-      status: "active",
-      description: "Oversees the administration of justice and legal reforms in Ethiopia.",
-      services: [
-        "Issuance of Advocates License",
-        "Renewal of Licensing Advocates",
-        "Upgrade the Licensing of Advocates"
-      ],
-      apiEndpoint: "https://api.moj.gov.et/v1",
-      logo: "/images/ministryOfJustice.jpg",
-    },
-    {
-      id: "eaa-001",
-      name: "Ethiopian Agricultural Authority (EAA)",
-      status: "active",
-      description: "Regulates agricultural development, ensuring food security and sustainable practices.",
-      services: [
-        "New Certification of Agrochemical Manufacturers and Importers",
-        "Renewal Certification of Agrochemical Manufacturers and Importers",
-        "New Certification of Fertilizer Manufacturers and Importers",
-        "Renewal Certification of Fertilizer Manufacturers and Importers",
-        "New Certification of Plant and Plant Products Importers and Exporters",
-        "Renewal Certification of Plant and Plant Products Importers and Exporters",
-        "New Certification of Seed Producers, Importers, Distributors, and Processors",
-        "Renewal Certification of Seed Producers, Importers, Distributors, and Processors",
-        "New Certification of Veterinary Drug Manufacturers, Importers, Exporters, and Wholesalers"
-      ],
-      apiEndpoint: "https://api.eaa.gov.et/v1",
-      logo: "/images/agriculture.jpg",
-    },
-    {
-      id: "motl-001",
-      name: "Ministry of Transport and Logistics (MoTL)",
-      status: "active",
-      description: "Oversees transportation infrastructure and logistics services.",
-      services: [
-        "Issuance of Commercial Road Public Transport Operators Competency License",
-        "Renewal of Commercial Road Public Transport Operators Competency License",
-        "Issuance of Commercial Road Freight Transport Operators Competency License",
-        "Renewal of Commercial Road Freight Transport Operators Competency License",
-        "Issuance of Drivers and Assistants Cross-Border Entry Permits",
-        "Renewal of Drivers and Assistants Cross-Border Entry Permits"
-      ],
-      apiEndpoint: "https://api.motl.gov.et/v1",
-      logo: "/images/transport.jpg",
-    },
-    {
-      id: "eca-001",
-      name: "Ethiopian Construction Authority (ECA)",
-      status: "active",
-      description: "Regulates the construction sector, ensuring quality and safety standards.",
-      services: [
-        "New Professional Registration",
-        "Renewal Professional Registration",
-        "Lost Replacement of Professional Certificate",
-        "New Registration for Water Works Professional License",
-        "Renewal of Water Works Professional License",
-        "Upgrading for Water Works Professional License",
-        "New Registration of Water Works Competency Certificate for Company",
-        "Renewal of Water Works Company Competency Certificate",
-        "Change Grade for Water Works Companies Competency Certification",
-        "Lost Certificate Substitution for Water Works Companies"
-      ],
-      apiEndpoint: "https://api.eca.gov.et/v1",
-      logo: "/images/construction.jpg",
-    },
-    {
-      id: "mot-001",
-      name: "Ministry of Tourism (MoT)",
-      status: "active",
-      description: "Promotes and regulates Ethiopia’s tourism sector.",
-      services: [
-        "Support Letter for Expat Professionals in Star-Rated Hotel, Resort, Lodge, Motel, Tour Operators, and Restaurant"
-      ],
-      apiEndpoint: "https://api.mot.gov.et/v1",
-      logo: "/images/tourisim.jpg",
-    },
-    {
-      id: "efda-001",
-      name: "Ethiopian Food and Drug Authority (EFDA)",
-      status: "active",
-      description: "Ensures safety and quality of food, medicines, and medical devices.",
-      services: [
-        "New Licensing Medicine and Medical Device Importer & Wholesaler",
-        "Renewal License Application Processing for Medicine and Medical Device Importer & Wholesaler",
-        "Return of Certificate of Competence for Medicine and Medical Device Importer & Wholesaler",
-        "Replacement of Certificate of Competence for Medicine and Medical Device Importer & Wholesaler",
-        "Variation or Changes (Ownership, Technical Personnel, Product Type/Service Type or Other Change)",
-        "Address Change"
-      ],
-      apiEndpoint: "https://api.efda.gov.et/v1",
-      logo: "/images/foodAndDrug.jpg",
-    },
-    {
-      id: "fppa-001",
-      name: "Federal Public Procurement and Property Authority (FPPA)",
-      status: "active",
-      description: "Oversees public procurement and government asset management.",
-      services: [
-        "Providing Supplier Registration Service",
-        "Providing Supplier Registration Revision Service"
-      ],
-      apiEndpoint: "https://api.fppa.gov.et/v1",
-      logo: "/images/publicProcurement.jpg",
-    },
-    {
-      id: "ecc-001",
-      name: "Ethiopian Customs Commission (ECC)",
-      status: "active",
-      description: "Enforces customs laws, regulates imports, exports, and collects duties.",
-      services: [
-        "Temporary Bonded Customs Warehouse License",
-        "Bonded Customs Warehouse License",
-        "Private Temporary Customs Warehouse License",
-        "Private Bonded Customs Warehouse License",
-        "Bonded Warehouse License for Relief Items",
-        "Bonded Export Factory License",
-        "Bonded Export Factory Warehouse License",
-        "Bonded Warehouse License for Gift Deliveries",
-        "Duty-Free Goods Warehouse License",
-        "Duty-Free Retail Outlet License",
-        "Renewal of Temporary Bonded Customs Warehouse License",
-        "Renewal of Bonded Customs Warehouse License",
-        "Renewal of Private Temporary Customs Warehouse License",
-        "Renewal of Private Bonded Customs Warehouse License",
-        "Renewal of Bonded Warehouse License for Relief Items",
-        "Renewal of Bonded Export Factory License",
-        "Renewal of Bonded Export Factory Warehouse License",
-        "Renewal of Bonded Warehouse License for Gift Deliveries",
-        "Renewal of Duty-Free Goods Warehouse License",
-        "Renewal of Duty-Free Retail Outlet License",
-        "Customs Broker License",
-        "Renewal of Customs Broker License"
-      ],
-      apiEndpoint: "https://api.ecc.gov.et/v1",
-     logo: "/images/customCommision.jpg",
-    },
-    {
-      id: "ephi-001",
-      name: "Ethiopian Public Health Institute (EPHI)",
-      status: "active",
-      description: "Manages disease prevention, health research, and public health emergencies.",
-      services: [
-        "Inspection of Corpses and Human Remains Entering the Country",
-        "Inspection of Corpses and Human Remains Exiting the Country"
-      ],
-      apiEndpoint: "https://api.ephi.gov.et/v1",
-      logo: "/images/publicHealth.jpg",
-    }
-  ];
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/requests/institutions", {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Fetch failed");
+        return res.json();
+      })
+      .then((data) => setInstitutions(data))
+      .catch((err) => console.error("Fetch issue:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (preselectedInstitution) {
@@ -433,37 +122,41 @@ export default function SubmitRequestPage() {
     }
   };
 
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
+    if (!selectedInstitution) return;
+
     setIsSubmitting(true);
 
-    // Create new request object
     const newRequest = {
-      id: uuidv4(),
-      institutionId: selectedInstitution?.id || "",
-      institutionName: selectedInstitution?.name || "",
+      institutionId: selectedInstitution.id,
+      institutionName: selectedInstitution.name,
       services: selectedServices,
       title: requestTitle,
       description: requestDescription,
       status: "Submitted",
-      date: new Date().toISOString(),
     };
 
-    // Get existing requests from localStorage
-    const existingRequests = JSON.parse(
-      localStorage.getItem("apiRequests") || "[]"
-    );
+    try {
+      const res = await fetch("http://localhost:5000/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important if you're using cookie-based auth
+        body: JSON.stringify(newRequest),
+      });
 
-    // Add new request
-    const updatedRequests = [...existingRequests, newRequest];
+      if (!res.ok) {
+        const errMsg = await res.text();
+        throw new Error(`Failed to submit request: ${errMsg}`);
+      }
 
-    // Save to localStorage
-    localStorage.setItem("apiRequests", JSON.stringify(updatedRequests));
-
-    // Simulate API request delay
-    setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setIsSubmitting(false);
+    }
   };
 
   const handleNewRequest = () => {
@@ -729,7 +422,8 @@ export default function SubmitRequestPage() {
                 </button>
                 <Slider ref={sliderRef} {...settings}>
                   {institutions
-                    .filter((inst) => inst.status === "active")
+                    .filter((inst) => inst.status.toLowerCase() === "active")
+
                     .map((institution, index) => (
                       <div key={institution.id}>
                         <div

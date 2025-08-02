@@ -1,8 +1,72 @@
 const db = require("../config/db");
 
-// GET all requests
-exports.getAllRequests = (req, res) => {
-  db.query("SELECT * FROM requests", (err, results) => {
+exports.submitRequest = (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+  const {
+    institutionId,
+    institutionName,
+    services,
+    title,
+    description,
+    status = "Submitted",
+  } = req.body;
+
+  const sqlRequest = `
+    INSERT INTO requests 
+      (user_id, institutionId, institutionName, services, title, description, status, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+  `;
+
+  db.query(
+    sqlRequest,
+    [
+      userId,
+      institutionId,
+      institutionName,
+      JSON.stringify(services),
+      title,
+      description,
+      status,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("DB insert error:", err);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      const requestId = result.insertId;
+
+      // Create notification message using the submitted title
+      const notificationMessage = `New request submitted: ${title}`;
+
+      const sqlNotification = `
+        INSERT INTO notifications (requestId, message, isRead, createdAt)
+        VALUES (?, ?, false, NOW())
+      `;
+
+      db.query(
+        sqlNotification,
+        [requestId, notificationMessage],
+        (notifErr) => {
+          if (notifErr) {
+            console.error("Notification insert error:", notifErr);
+            return res
+              .status(201)
+              .json({ message: "Request submitted, but notification failed" });
+          }
+          res.status(201).json({
+            message: "Request and notification submitted successfully",
+          });
+        }
+      );
+    }
+  );
+};
+
+exports.getInstitutions = (req, res) => {
+  db.query("SELECT * FROM institutions", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });

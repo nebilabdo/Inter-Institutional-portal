@@ -100,7 +100,7 @@ exports.login = (req, res) => {
     });
 
     res.setHeader("Set-Cookie", cookie);
-    res.json({ message: "Login successful" }); // no token in body
+    res.json({ message: "Login successful", token });
   });
 };
 
