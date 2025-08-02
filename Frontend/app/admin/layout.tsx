@@ -3,20 +3,24 @@ import "./globals.css";
 import Header from "@/components/Header";
 import { NotificationsProvider } from "@/components/NotificationsContext";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Data Exchange Portal",
   description: "A modern data sharing dashboard",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <NotificationsProvider>
-      <Header />
-      {children}
-    </NotificationsProvider>
+    <html lang="en">
+      <body>
+        <NotificationsProvider>
+          <Header />
+          {children}
+        </NotificationsProvider>
+      </body>
+    </html>
   );
 }

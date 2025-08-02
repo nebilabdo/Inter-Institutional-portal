@@ -9,7 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const token = cookieStore.get("token")?.value;
 
   if (!token) {
@@ -22,7 +22,6 @@ export default async function AdminLayout({
       new TextEncoder().encode(JWT_SECRET)
     );
 
-    // Check role for admin
     if (payload.role !== "admin") {
       redirect("/login");
     }

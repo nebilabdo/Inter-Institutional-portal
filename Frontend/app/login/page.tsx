@@ -1,14 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
-
-type JwtPayload = {
-  id: string;
-  email: string;
-  role: string;
-  exp: number;
-};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,10 +22,8 @@ export default function LoginPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // important to send cookies
           body: JSON.stringify({ email, password }),
         }
       );
@@ -45,13 +35,21 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      // After successful login, fetch user info from backend (using cookie)
+      const userRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
+        {
+          credentials: "include",
+        }
+      );
 
-      // Decode token to get role
+      if (!userRes.ok) {
+        setError("Failed to get user info");
+        return;
+      }
 
-      const decoded = jwtDecode<JwtPayload>(data.token);
-
-      const userRole = decoded.role.toLowerCase();
+      const { user } = await userRes.json();
+      const userRole = user.role.toLowerCase();
 
       if (userRole === "admin") {
         router.push("/admin");

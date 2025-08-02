@@ -46,19 +46,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-
         const institutionsRes = await axios.get(
           "http://localhost:5000/api/admin/institutions",
           {
-            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
           }
         );
 
-        // Log the full response data structure here
         console.log("Institutions API response:", institutionsRes.data);
 
-        // Assuming API returns { institutions: [], total: number, change: string }
         const institutionsData =
           institutionsRes.data.institutions || institutionsRes.data;
 
@@ -77,7 +73,7 @@ export default function DashboardPage() {
         const usersRes = await axios.get(
           "http://localhost:5000/api/admin/user-stats",
           {
-            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
           }
         );
 
@@ -117,10 +113,18 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-    }
+    const checkAuth = async () => {
+      try {
+        await axios.get("http://localhost:5000/api/admin/institutions", {
+          withCredentials: true,
+        });
+        // Authenticated, do nothing
+      } catch (error) {
+        router.push("/login");
+      }
+    };
+
+    checkAuth();
   }, [router]);
 
   useEffect(() => {

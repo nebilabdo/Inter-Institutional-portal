@@ -6,6 +6,14 @@ const adminController = require("../controllers/adminController");
 
 router.use(auth, role("admin"));
 
+// Add a simple test route at GET /
+router.get("/", (req, res) => {
+  res.json({
+    message: "Admin route accessed",
+    user: req.user,
+  });
+});
+
 router.post("/institutions", adminController.createInstitution);
 router.post("/users/register", adminController.registerInstitutionUser);
 router.put("/institutions/:id/approve", adminController.approveInstitution);

@@ -212,9 +212,18 @@ export default function Header() {
   };
 
   // Logout handler
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:5000/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      alert("Logout failed");
+    }
   };
 
   // Icon by notification type

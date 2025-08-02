@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 
 import { Input } from "@/components/ui/input";
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, X } from "react-feather";
+import { useRouter } from "next/navigation";
 
 interface PasswordRequirements {
   hasMinLength: boolean;
@@ -42,6 +45,7 @@ export default function RegisterInstitutionForm({
   onRegister,
   onCancel,
 }: RegisterInstitutionFormProps) {
+  const router = useRouter();
   const [form, setForm] = useState<InstitutionFormData>({
     name: "",
     type: "",
@@ -183,24 +187,23 @@ export default function RegisterInstitutionForm({
     };
 
     try {
-      const token = localStorage.getItem("token");
-
       const response = await fetch(
         "http://localhost:5000/api/admin/institutions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
           body: JSON.stringify(payload),
         }
       );
 
       if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem("token");
         alert("Session expired. Please log in again.");
-        window.location.href = "/login";
+        router.push("/login");
+
         return;
       }
 

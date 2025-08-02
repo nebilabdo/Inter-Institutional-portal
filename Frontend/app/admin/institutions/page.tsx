@@ -61,56 +61,54 @@ export default function InstitutionsPage() {
   if (pathname === "/notifications") return null;
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/institutions",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // required for cookie auth
+          }
+        );
+
+        if (response.status === 401 || response.status === 403) {
+          alert("Session expired. Please log in again.");
+          router.push("/login");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch institutions");
+        }
+
+        const data = await response.json();
+
+        const mappedInstitutions = Array.isArray(data.institutions)
+          ? data.institutions.map((inst) => ({
+              ...inst,
+              contactPerson: inst.contact_person || "",
+            }))
+          : [];
+
+        setInstitutions(mappedInstitutions);
+      } catch (error) {
+        console.error("Error fetching institutions:", error);
+      }
+    };
+
+    // Initial fetch
+    fetchData();
+
+    // Optional global refresh event
     const refreshHandler = () => {
       fetchData();
     };
 
     window.addEventListener("global-refresh", refreshHandler);
     return () => window.removeEventListener("global-refresh", refreshHandler);
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/admin/institutions",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem("token");
-        alert("Session expired. Please log in again.");
-        router.push("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch institutions");
-      }
-
-      const data = await response.json();
-
-      const mappedInstitutions = Array.isArray(data.institutions)
-        ? data.institutions.map((inst) => ({
-            ...inst,
-            contactPerson: inst.contact_person || "",
-          }))
-        : [];
-
-      setInstitutions(mappedInstitutions);
-    } catch (error) {
-      console.error("Error fetching institutions:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, [router]);
 
   const filteredInstitutions = institutions.filter((institution) => {
@@ -537,15 +535,15 @@ export default function InstitutionsPage() {
                     institution={selectedInstitution}
                     onSave={async (updated) => {
                       try {
-                        const token = localStorage.getItem("token");
                         const response = await fetch(
                           `http://localhost:5000/api/institution/${selectedInstitution.id}`,
                           {
                             method: "PUT",
                             headers: {
                               "Content-Type": "application/json",
-                              Authorization: `Bearer ${token}`,
+                              // NO Authorization header here
                             },
+                            credentials: "include", // VERY IMPORTANT to send cookies
                             body: JSON.stringify(updated),
                           }
                         );

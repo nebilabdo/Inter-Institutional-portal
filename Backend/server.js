@@ -14,6 +14,9 @@ const notificationsRoutes = require("./routes/notifications");
 const app = express();
 app.use(logMiddleware);
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.use(
   cors({
     origin: "http://localhost:3000",
