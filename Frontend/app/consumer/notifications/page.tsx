@@ -21,26 +21,14 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import Link from "next/link";
-type Notification = {
-  id: number;
-  title: string;
-  message: string;
-  type: string;
-  timestamp: string;
-  read: boolean;
-  requestId: number;
-  provider: string;
-};
-
-const [notifications, setNotifications] = useState<Notification[]>([]);
 
 type NotificationsPageProps = {
   userId?: string;
 };
-export default function NotificationsPage({ userId }: NotificationsPageProps) {
+export default function NotificationsPage({ userId }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!userId) return;

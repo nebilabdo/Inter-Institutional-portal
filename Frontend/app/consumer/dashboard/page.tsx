@@ -551,7 +551,13 @@ export default function ConsumerDashboard() {
                           <Link
                             href={`/consumer/submit-request?institution=${institution.id}`}
                           >
-                            <Button>Request</Button>
+                            <Button
+                              size="sm"
+                              className="text-xs bg-gradient-to-r from-[#7BC9FF] to-[#9B7EBD] hover:from-[#E8988A] hover:to-[#E0B8B0] text-white transition-colors"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Request
+                            </Button>
                           </Link>
                         </CardFooter>
                       </Card>
