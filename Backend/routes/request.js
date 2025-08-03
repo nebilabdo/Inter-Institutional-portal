@@ -6,7 +6,7 @@ const authMiddleware = require("../middlewares/auth");
 
 router.post("/", authMiddleware, controller.submitRequest);
 router.get("/", controller.getAllRequests);
-
+router.get("/notifications", controller.getNotifications);
 router.post("/:id/stop-conversation", controller.stopConversation);
 router.post("/:id/resume-conversation", controller.resumeConversation);
 router.post("/:id/note", controller.saveAdminNote);

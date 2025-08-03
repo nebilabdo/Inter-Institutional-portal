@@ -119,6 +119,43 @@ exports.getAllRequests = (req, res) => {
   });
 };
 
+// controllers/notifications.js
+exports.getNotifications = (req, res) => {
+  const userId = req.params.userId;
+
+  const sql = `
+    SELECT n.id, n.title, n.message, n.type, n.createdAt as timestamp, 
+           n.read, r.id as requestId, r.title as requestTitle, p.name as provider
+    FROM notifications n
+    JOIN requests r ON n.requestId = r.id
+    JOIN providers p ON r.providerId = p.id
+    WHERE n.userId = ?
+    ORDER BY n.createdAt DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Failed to fetch notifications:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const formatted = results.map((n) => ({
+      id: n.id,
+      title: n.title || `Update for: ${n.requestTitle}`,
+      message:
+        n.message ||
+        `You have an update for "${n.requestTitle}" from ${n.provider}.`,
+      type: n.type || "info",
+      timestamp: n.timestamp,
+      read: !!n.read,
+      requestId: n.requestId,
+      provider: n.provider,
+    }));
+
+    res.json(formatted);
+  });
+};
+
 // POST resume conversation
 exports.resumeConversation = (req, res) => {
   const { id } = req.params;

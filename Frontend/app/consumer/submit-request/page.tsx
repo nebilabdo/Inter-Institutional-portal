@@ -142,7 +142,7 @@ export default function SubmitRequestPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Important if you're using cookie-based auth
+        credentials: "include",
         body: JSON.stringify(newRequest),
       });
 
@@ -210,6 +210,22 @@ export default function SubmitRequestPage() {
       },
     ],
   };
+
+  const institutionId = searchParams.get("institution");
+
+  const institutionIdParam = searchParams.get("institution");
+
+  useEffect(() => {
+    if (!institutionIdParam || institutions.length === 0) return;
+
+    const institutionId = parseInt(institutionIdParam, 10);
+    const matched = institutions.find((inst) => inst.id === institutionId);
+
+    if (matched) {
+      setSelectedInstitution(matched);
+      setCurrentStep(2);
+    }
+  }, [institutionIdParam, institutions]);
 
   return (
     <DashboardLayout userRole="consumer">

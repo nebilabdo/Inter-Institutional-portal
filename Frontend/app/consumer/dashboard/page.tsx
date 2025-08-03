@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -42,15 +44,16 @@ import {
 import { useRouter } from "next/navigation";
 
 interface Institution {
-  id: string;
+  id: number; // changed to number
   name: string;
   type: string;
   status: "active" | "inactive" | "pending";
-  description: string;
+  description?: string; // optional, since API doesn't return it
   services: string[];
-  apiEndpoint?: string;
-  responseTime: string;
-  reliability: number;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 }
 
 interface APIRequest {
@@ -88,7 +91,6 @@ interface DashboardStats {
 }
 
 export default function ConsumerDashboard() {
-  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalRequests: 0,
     pendingRequests: 0,
@@ -99,139 +101,53 @@ export default function ConsumerDashboard() {
     availableInstitutions: 0,
   });
 
-  const [institutions, setInstitutions] = useState<Institution[]>([
-    {
-      id: "edu-001",
-      name: "Ministry of Education",
-      type: "Government",
-      status: "active",
-      description:
-        "National education data, student records, and academic credentials",
-      services: [
-        "Student Records",
-        "Academic Credentials",
-        "Enrollment Data",
-        "Course Catalogs",
-      ],
-      apiEndpoint: "https://api.education.gov/v1",
-      responseTime: "< 2 hours",
-      reliability: 99.8,
-    },
-    {
-      id: "research-001",
-      name: "National Research Council",
-      type: "Research Institution",
-      status: "active",
-      description: "Research publications, grant data, and academic metrics",
-      services: [
-        "Research Publications",
-        "Grant Database",
-        "Citation Metrics",
-        "Researcher Profiles",
-      ],
-      apiEndpoint: "https://api.research.gov/v2",
-      responseTime: "< 4 hours",
-      reliability: 98.5,
-    },
-    {
-      id: "finance-001",
-      name: "Department of Financial Services",
-      type: "Government",
-      status: "active",
-      description: "Financial aid information, loan data, and payment records",
-      services: [
-        "Financial Aid",
-        "Student Loans",
-        "Payment Records",
-        "Scholarship Data",
-      ],
-      apiEndpoint: "https://api.finance.gov/v1",
-      responseTime: "< 6 hours",
-      reliability: 97.2,
-    },
-    {
-      id: "health-001",
-      name: "Ministry of Health",
-      type: "Government",
-      status: "active",
-      description:
-        "Healthcare provider directories and medical facility information",
-      services: [
-        "Provider Directory",
-        "Medical Facilities",
-        "Health Statistics",
-        "Emergency Services",
-      ],
-      apiEndpoint: "https://api.health.gov/v2",
-      responseTime: "< 3 hours",
-      reliability: 99.1,
-    },
-    {
-      id: "transport-001",
-      name: "Transport Authority",
-      type: "Public Service",
-      status: "active",
-      description: "Public transportation data, routes, and schedules",
-      services: [
-        "Route Information",
-        "Schedule Data",
-        "Real-time Updates",
-        "Service Alerts",
-      ],
-      apiEndpoint: "https://api.transport.gov/v1",
-      responseTime: "< 1 hour",
-      reliability: 96.8,
-    },
-    {
-      id: "publishers-001",
-      name: "Academic Publishers Consortium",
-      type: "Private Consortium",
-      status: "active",
-      description:
-        "Academic publications, journal access, and citation databases",
-      services: [
-        "Journal Access",
-        "Citation Database",
-        "Publication Metrics",
-        "Author Profiles",
-      ],
-      apiEndpoint: "https://api.publishers.org/v3",
-      responseTime: "< 8 hours",
-      reliability: 98.9,
-    },
-    {
-      id: "energy-001",
-      name: "National Energy Commission",
-      type: "Government",
-      status: "active",
-      description: "Energy consumption data and renewable energy statistics",
-      services: [
-        "Consumption Data",
-        "Renewable Stats",
-        "Grid Status",
-        "Utility Providers",
-      ],
-      apiEndpoint: "https://api.energy.gov/v1",
-      responseTime: "< 5 hours",
-      reliability: 97.5,
-    },
-    {
-      id: "labor-001",
-      name: "Department of Labor",
-      type: "Government",
-      status: "active",
-      description: "Employment statistics and job market analytics",
-      services: [
-        "Employment Stats",
-        "Job Market",
-        "Wage Data",
-        "Occupational Info",
-      ],
-      apiEndpoint: "https://api.labor.gov/v2",
-      responseTime: "< 3 hours",
-      reliability: 98.2,
-    },
-  ]);
+  useEffect(() => {
+    async function fetchInstitutions() {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/requests/institutions"
+        );
+        if (!res.ok) throw new Error("Failed to fetch institutions");
+        const data: Institution[] = await res.json();
+
+        console.log("Institutions fetched:", data);
+
+        const activeInstitutionsCount = data.filter(
+          (inst) => inst.status?.toLowerCase() === "active"
+        ).length;
+
+        console.log("Active institutions count:", activeInstitutionsCount);
+
+        setStats((prevStats) => ({
+          ...prevStats,
+          availableInstitutions: activeInstitutionsCount,
+        }));
+      } catch (error) {
+        console.error("Error fetching institutions:", error);
+      }
+    }
+    fetchInstitutions();
+  }, []);
+
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    async function fetchInstitutions() {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/requests/institutions"
+        );
+        if (!res.ok) throw new Error("Failed to fetch institutions");
+        const data = await res.json();
+        console.log("Fetched institutions", data);
+        setInstitutions(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchInstitutions();
+  }, []);
 
   const [recentRequests, setRecentRequests] = useState<APIRequest[]>([
     {
@@ -327,41 +243,17 @@ export default function ConsumerDashboard() {
     },
   ]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-
   useEffect(() => {
-    calculateStats();
-  }, [recentRequests, institutions]);
-
-  const calculateStats = () => {
-    const totalRequests = recentRequests.length;
-    const pendingRequests = recentRequests.filter(
-      (req) => req.status === "pending" || req.status === "in_progress"
-    ).length;
-    const approvedRequests = recentRequests.filter(
-      (req) => req.status === "approved"
-    ).length;
-    const rejectedRequests = recentRequests.filter(
-      (req) => req.status === "rejected"
-    ).length;
-    const activeAPIs = recentRequests.filter(
-      (req) => req.status === "approved" && req.apiEndpoint
-    ).length;
-    const monthlyUsage = 2340; // Mock data
-    const availableInstitutions = institutions.filter(
-      (inst) => inst.status === "active"
-    ).length;
-
-    setStats({
-      totalRequests,
-      pendingRequests,
-      approvedRequests,
-      rejectedRequests,
-      monthlyUsage,
-      activeAPIs,
-      availableInstitutions,
-    });
-  };
+    fetch("http://localhost:5000/api/requests")
+      .then((res) => res.json())
+      .then((data) => {
+        setStats((prev) => ({
+          ...prev,
+          totalRequests: data.length,
+        }));
+      })
+      .catch((err) => console.error("Failed to fetch requests", err));
+  }, []);
 
   const markNotificationAsRead = (id: number) => {
     setNotifications((prev) =>
@@ -436,18 +328,21 @@ export default function ConsumerDashboard() {
 
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
-  // Filter institutions based on search term
-  const filteredInstitutions = institutions.filter(
-    (institution) =>
+  const filteredInstitutions = institutions.filter((institution) => {
+    const isActive = institution.status?.toLowerCase() === "active";
+    const matchesSearch =
+      searchTerm.trim() === "" ||
       institution.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       institution.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       institution.description
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      institution.services.some((service) =>
+      institution.services?.some((service) =>
         service.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-  );
+      );
+
+    return isActive && matchesSearch;
+  });
 
   return (
     <DashboardLayout userRole="consumer">
@@ -579,8 +474,7 @@ export default function ConsumerDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {filteredInstitutions.filter((inst) => inst.status === "active")
-                  .length === 0 ? (
+                {filteredInstitutions.length === 0 ? (
                   <div className="text-center py-12">
                     <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                     <h3 className="text-lg font-semibold text-gray-600 mb-2">
@@ -592,84 +486,76 @@ export default function ConsumerDashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {filteredInstitutions
-                      .filter((inst) => inst.status === "active")
-                      .map((institution) => (
-                        <Card
-                          key={institution.id}
-                          className="flex flex-col h-full border border-gray-200 rounded-xl hover:shadow-md transition-shadow"
-                        >
-                          <CardHeader className="pb-0 px-4 pt-4">
-                            <div className="flex items-center justify-between gap-2 w-full">
-                              <CardTitle className="text-base font-medium truncate">
-                                {institution.name}
-                              </CardTitle>
+                    {filteredInstitutions.map((institution) => (
+                      <Card
+                        key={institution.id}
+                        className="flex flex-col h-full border border-gray-200 rounded-xl hover:shadow-md transition-shadow"
+                      >
+                        <CardHeader className="pb-0 px-4 pt-4">
+                          <div className="flex items-center justify-between gap-2 w-full">
+                            <CardTitle className="text-base font-medium truncate">
+                              {institution.name}
+                            </CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="px-4 py-3 flex-1">
+                          <div className="mb-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              {institution.services
+                                .slice(0, 4)
+                                .map((service, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-xs px-2 py-0.5"
+                                  >
+                                    {service}
+                                  </Badge>
+                                ))}
+                              {institution.services.length > 4 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs px-2 py-0.5"
+                                      >
+                                        +{institution.services.length - 4}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <div className="grid grid-cols-2 gap-2 p-2 max-w-xs">
+                                        {institution.services
+                                          .slice(4)
+                                          .map((service, i) => (
+                                            <Badge
+                                              key={i}
+                                              variant="secondary"
+                                              className="text-xs"
+                                            >
+                                              {service}
+                                            </Badge>
+                                          ))}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
-                          </CardHeader>
-                          <CardContent className="px-4 py-3 flex-1">
-                            <div className="mb-2">
-                              <div className="flex flex-wrap gap-1.5">
-                                {institution.services
-                                  .slice(0, 4)
-                                  .map((service, index) => (
-                                    <Badge
-                                      key={index}
-                                      variant="outline"
-                                      className="text-xs px-2 py-0.5"
-                                    >
-                                      {service}
-                                    </Badge>
-                                  ))}
-                                {institution.services.length > 4 && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs px-2 py-0.5"
-                                        >
-                                          +{institution.services.length - 4}
-                                        </Badge>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <div className="grid grid-cols-2 gap-2 p-2 max-w-xs">
-                                          {institution.services
-                                            .slice(4)
-                                            .map((service, i) => (
-                                              <Badge
-                                                key={i}
-                                                variant="secondary"
-                                                className="text-xs"
-                                              >
-                                                {service}
-                                              </Badge>
-                                            ))}
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="flex justify-between pt-0 px-4 pb-4">
-                            <Link
-                              href={`/consumer/institutions/${institution.id}`}
-                            ></Link>
-                            <Link
-                              href={`/consumer/submit-request?institution=${institution.id}`}
-                            >
-                              <Button
-                                size="sm"
-                                className="text-xs bg-gradient-to-r from-[#7BC9FF] to-[#9B7EBD] hover:from-[#E8988A] hover:to-[#E0B8B0] text-white transition-colors"
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Request
-                              </Button>
-                            </Link>
-                          </CardFooter>
-                        </Card>
-                      ))}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between pt-0 px-4 pb-4">
+                          <Link
+                            href={`/consumer/institutions/${institution.id}`}
+                          ></Link>
+                          <Link
+                            href={`/consumer/submit-request?institution=${institution.id}`}
+                          >
+                            <Button>Request</Button>
+                          </Link>
+                        </CardFooter>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </CardContent>
