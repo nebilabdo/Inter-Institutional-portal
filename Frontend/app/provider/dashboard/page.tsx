@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -25,63 +25,45 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
+
+type IncomingRequest = {
+  id: number;
+  title: string;
+  consumer: string;
+  submittedDate: string;
+  priority: string;
+  status: string;
+  description: string;
+  requestedAttributes: string[];
+  purpose: string;
+};
+
 import { DashboardLayout } from "@/components/dashboard-layout";
 
 export default function ProviderDashboard() {
   const router = useRouter();
+  const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>(
+    []
+  );
 
-  const [incomingRequests, setIncomingRequests] = useState([
-    {
-      id: 1,
-      title: "Student Enrollment Data API",
-      consumer: "University of Technology",
-      submittedDate: "2024-01-16",
-      priority: "high",
-      status: "pending",
-      description:
-        "Request for real-time student enrollment data across universities",
-      requestedAttributes: [
-        "student_id",
-        "enrollment_date",
-        "course_code",
-        "status",
-      ],
-      purpose: "Academic research and institutional reporting",
-    },
-    {
-      id: 2,
-      title: "Financial Aid Information",
-      consumer: "Community College Network",
-      submittedDate: "2024-01-15",
-      priority: "medium",
-      status: "pending",
-      description:
-        "Student financial aid status and history for institutional reporting",
-      requestedAttributes: [
-        "student_id",
-        "aid_amount",
-        "aid_type",
-        "disbursement_date",
-      ],
-      purpose: "Financial aid coordination and student support services",
-    },
-    {
-      id: 3,
-      title: "Academic Performance Metrics",
-      consumer: "Research Institute",
-      submittedDate: "2024-01-14",
-      priority: "low",
-      status: "pending",
-      description: "Academic performance data for educational research",
-      requestedAttributes: [
-        "student_id",
-        "gpa",
-        "credits_completed",
-        "graduation_status",
-      ],
-      purpose: "Educational outcomes research and policy development",
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIncomingRequests = async () => {
+      try {
+        const res = await fetch("/api/requests");
+        if (!res.ok) throw new Error("Failed to fetch requests");
+        const data = await res.json();
+        setIncomingRequests(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIncomingRequests();
+  }, []);
 
   const [recentActivity] = useState([
     {

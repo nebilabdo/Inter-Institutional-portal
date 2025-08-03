@@ -91,6 +91,7 @@ interface DashboardStats {
 }
 
 export default function ConsumerDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalRequests: 0,
     pendingRequests: 0,

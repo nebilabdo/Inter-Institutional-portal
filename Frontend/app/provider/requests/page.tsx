@@ -1,182 +1,203 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import {
-  AlertTriangle,
-  FileText,
-  Clock,
-} from "lucide-react"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, FileText, Clock } from "lucide-react";
 
 type Request = {
-  id: number
-  title: string
-  consumer: string
-  submittedDate: string
-  priority: "high" | "medium" | "low"
-  status: "pending"
-  description: string
-  requestedAttributes: string[]
-  purpose: string
-}
+  id: number;
+  institutionId: string;
+  institutionName: string;
+  services: string[][];
+  title: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  user_id: number;
+  date: string;
+  lastUpdated: string;
+};
 
 type HistoryItem = {
-  id: number
-  title: string
-  consumer: string
-  submittedDate: string
-  decisionDate: string
-  status: "approved" | "rejected"
-  reason?: string
-}
+  id: number;
+  title: string;
+  consumer: string;
+  submittedDate: string;
+  decisionDate: string;
+  status: "approved" | "rejected";
+  reason?: string;
+};
 
 export default function IncomingRequestsPage() {
-  const [requests, setRequests] = useState<Request[]>([
-    {
-      id: 1,
-      title: "Student Enrollment Data API",
-      consumer: "University of Technology",
-      submittedDate: "2024-01-16",
-      priority: "high",
-      status: "pending",
-      description:
-        "Request for real-time student enrollment data across universities",
-      requestedAttributes: [
-        "student_id",
-        "enrollment_date",
-        "course_code",
-        "status",
-      ],
-      purpose: "Academic research and institutional reporting",
-    },
-    {
-      id: 2,
-      title: "Financial Aid Information",
-      consumer: "Community College Network",
-      submittedDate: "2024-01-15",
-      priority: "medium",
-      status: "pending",
-      description:
-        "Student financial aid status and history for institutional reporting",
-      requestedAttributes: [
-        "student_id",
-        "aid_amount",
-        "aid_type",
-        "disbursement_date",
-      ],
-      purpose: "Financial aid coordination and student support services",
-    },
-    {
-      id: 3,
-      title: "Academic Performance Metrics",
-      consumer: "Research Institute",
-      submittedDate: "2024-01-14",
-      priority: "low",
-      status: "pending",
-      description: "Academic performance data for educational research",
-      requestedAttributes: [
-        "student_id",
-        "gpa",
-        "credits_completed",
-        "graduation_status",
-      ],
-      purpose: "Educational outcomes research and policy development",
-    },
-  ])
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  const [history, setHistory] = useState<HistoryItem[]>([
-    {
-      id: 101,
-      title: "Healthcare Provider Directory",
-      consumer: "Ministry of Health",
-      submittedDate: "2023-12-10",
-      decisionDate: "2023-12-15",
-      status: "approved",
-    },
-    {
-      id: 102,
-      title: "Sensitive Financial Data",
-      consumer: "National Bank",
-      submittedDate: "2023-11-28",
-      decisionDate: "2023-12-05",
-      status: "rejected",
-      reason: "Insufficient security clearance",
-    },
-    {
-      id: 103,
-      title: "Faculty Publications",
-      consumer: "Research Consortium",
-      submittedDate: "2023-11-15",
-      decisionDate: "2023-11-20",
-      status: "approved",
-    },
-  ])
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const reqResponse = await fetch(
+          "http://localhost:5000/api/requests/submitted"
+        );
+        if (!reqResponse.ok)
+          throw new Error("Failed to fetch pending requests");
+        const requestsData: Request[] = await reqResponse.json();
 
- 
+        const historyResponse = await fetch(
+          "http://localhost:5000/api/requests/history"
+        );
+        if (!historyResponse.ok) throw new Error("Failed to fetch history");
+        const historyData: HistoryItem[] = await historyResponse.json();
+
+        setRequests(requestsData);
+        setHistory(historyData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // const [history, setHistory] = useState<HistoryItem[]>([
+  //   {
+  //     id: 101,
+  //     title: "Healthcare Provider Directory",
+  //     consumer: "Ministry of Health",
+  //     submittedDate: "2023-12-10",
+  //     decisionDate: "2023-12-15",
+  //     status: "approved",
+  //   },
+  //   {
+  //     id: 102,
+  //     title: "Sensitive Financial Data",
+  //     consumer: "National Bank",
+  //     submittedDate: "2023-11-28",
+  //     decisionDate: "2023-12-05",
+  //     status: "rejected",
+  //     reason: "Insufficient security clearance",
+  //   },
+  //   {
+  //     id: 103,
+  //     title: "Faculty Publications",
+  //     consumer: "Research Consortium",
+  //     submittedDate: "2023-11-15",
+  //     decisionDate: "2023-11-20",
+  //     status: "approved",
+  //   },
+  // ])
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
-  }
+    });
+  };
 
-  const handleApprove = (requestId: number) => {
-    const request = requests.find((r) => r.id === requestId)
-    if (!request) return
+  const handleApprove = async (requestId: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/requests/${requestId}/approve`,
+        {
+          method: "POST",
+        }
+      );
 
-    setRequests(requests.filter((r) => r.id !== requestId))
-    setHistory([
-      {
-        id: requestId,
-        title: request.title,
-        consumer: request.consumer,
-        submittedDate: request.submittedDate,
-        status: "approved",
-        decisionDate: new Date().toISOString().split("T")[0],
-      },
-      ...history,
-    ])
-  }
+      if (!response.ok) throw new Error("Failed to approve request");
 
-  const handleReject = (requestId: number) => {
-    const request = requests.find((r) => r.id === requestId)
-    if (!request) return
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return;
 
-    setRequests(requests.filter((r) => r.id !== requestId))
-    setHistory([
-      {
-        id: requestId,
-        title: request.title,
-        consumer: request.consumer,
-        submittedDate: request.submittedDate,
-        status: "rejected",
-        decisionDate: new Date().toISOString().split("T")[0],
-        reason: "Manually rejected by provider",
-      },
-      ...history,
-    ])
-  }
+      setRequests(requests.filter((r) => r.id !== requestId));
+      setHistory([
+        {
+          id: requestId,
+          title: request.title,
+          consumer: request.institutionName,
+          submittedDate: request.createdAt,
+          status: "approved",
+          decisionDate: new Date().toISOString().split("T")[0],
+        },
+        ...history,
+      ]);
+    } catch (error) {
+      console.error(error);
+      alert("Error approving request.");
+    }
+  };
 
-  const handleMoreInfo = (title: string) => {
-    alert(`Requesting more info for "${title}" — implement your logic here.`)
-  }
+  const handleReject = async (requestId: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/requests/${requestId}/reject`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to reject request");
+
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return;
+
+      setRequests(requests.filter((r) => r.id !== requestId));
+      setHistory([
+        {
+          id: requestId,
+          title: request.title,
+          consumer: request.institutionName,
+          submittedDate: request.createdAt,
+          status: "rejected",
+          decisionDate: new Date().toISOString().split("T")[0],
+          reason: "Manually rejected by provider",
+        },
+        ...history,
+      ]);
+    } catch (error) {
+      console.error(error);
+      alert("Error rejecting request.");
+    }
+  };
+
+  const [moreInfoRequestId, setMoreInfoRequestId] = useState<number | null>(
+    null
+  );
+  const [infoMessage, setInfoMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  const handleMoreInfo = (requestId: number) => {
+    setMoreInfoRequestId(requestId);
+    setShowModal(true);
+  };
+  const sendMoreInfoRequest = async () => {
+    if (!moreInfoRequestId || !infoMessage.trim()) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/requests/${moreInfoRequestId}/request-more-info`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: infoMessage }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to send info request");
+
+      alert("Info request sent successfully.");
+      setShowModal(false);
+      setInfoMessage("");
+    } catch (error) {
+      console.error(error);
+      alert("Error sending info request.");
+    }
+  };
 
   return (
     <DashboardLayout userRole="provider">
@@ -224,14 +245,17 @@ export default function IncomingRequestsPage() {
                               <h3 className="font-semibold text-lg">
                                 {request.title}
                               </h3>
-                             
                             </div>
                             <p className="text-gray-600">
-                              {request.description}
+                              {request.description || "No description"}
                             </p>
                             <div className="flex items-center gap-4 text-sm text-black font-semibold">
-                              <span>Requested by: {request.consumer}</span>
-                              <span>Submitted: {formatDate(request.submittedDate)}</span>
+                              <span>
+                                Requested by: {request.institutionName}
+                              </span>
+                              <span>
+                                Submitted: {formatDate(request.createdAt)}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -242,7 +266,7 @@ export default function IncomingRequestsPage() {
                               Purpose:
                             </h4>
                             <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                              {request.purpose}
+                              {request.purpose ?? "No purpose provided"}
                             </p>
                           </div>
 
@@ -251,16 +275,23 @@ export default function IncomingRequestsPage() {
                               Requested Attributes:
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                              {request.requestedAttributes.map(
-                                (attr, index) => (
-                                  <Badge
-                                    key={index}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {attr}
-                                  </Badge>
+                              {request.requestedAttributes &&
+                              request.requestedAttributes.length > 0 ? (
+                                request.requestedAttributes.map(
+                                  (attr: string, index: number) => (
+                                    <Badge
+                                      key={index}
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {attr}
+                                    </Badge>
+                                  )
                                 )
+                              ) : (
+                                <p className="text-gray-500 text-xs">
+                                  No requested attributes
+                                </p>
                               )}
                             </div>
                           </div>
@@ -269,10 +300,11 @@ export default function IncomingRequestsPage() {
                         <div className="flex flex-wrap justify-end gap-3">
                           <Button
                             variant="outline"
-                            onClick={() => handleMoreInfo(request.title)}
+                            onClick={() => handleMoreInfo(request.id)}
                           >
                             Request More Info
                           </Button>
+
                           <Button
                             variant="destructive"
                             onClick={() => handleReject(request.id)}
@@ -369,7 +401,39 @@ export default function IncomingRequestsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Modal for More Info Request */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-lg space-y-4 shadow-lg">
+              <h2 className="text-xl font-semibold">
+                Request More Information
+              </h2>
+              <textarea
+                className="w-full border rounded p-2"
+                rows={5}
+                placeholder="Type your message here..."
+                value={infoMessage}
+                onChange={(e) => setInfoMessage(e.target.value)}
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  className="px-4 py-2 bg-gray-200 rounded"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                  onClick={sendMoreInfoRequest}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

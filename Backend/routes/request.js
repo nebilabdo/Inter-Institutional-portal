@@ -11,5 +11,10 @@ router.post("/:id/stop-conversation", controller.stopConversation);
 router.post("/:id/resume-conversation", controller.resumeConversation);
 router.post("/:id/note", controller.saveAdminNote);
 router.get("/institutions", controller.getInstitutions);
+router.post("/:id/approve", controller.approveRequest);
+router.post("/:id/reject", controller.rejectRequest);
+router.get("/submitted", controller.getSubmitted);
+router.get("/history", controller.getHistory);
+router.post("/:id/request-more-info", controller.requestMoreInfo);
 
 module.exports = router;

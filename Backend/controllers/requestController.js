@@ -182,3 +182,106 @@ exports.saveAdminNote = (req, res) => {
     }
   );
 };
+
+exports.approveRequest = (req, res) => {
+  const { id } = req.params;
+  db.query(
+    "UPDATE requests SET status = ?, decisionDate = ? WHERE id = ?",
+    ["approved", new Date(), id],
+    (error, result) => {
+      if (error) {
+        console.error("Error approving request:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Request not found" });
+      }
+
+      res.json({ message: "Request approved successfully" });
+    }
+  );
+};
+
+exports.rejectRequest = (req, res) => {
+  const { id } = req.params;
+  const query =
+    "UPDATE requests SET status = ?, decisionDate = ?, reason = ? WHERE id = ?";
+  const values = ["rejected", new Date(), "Manually rejected by provider", id];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error("Error rejecting request:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.json({ message: "Request rejected successfully" });
+  });
+};
+
+// Get all approved or rejected (history)
+exports.getHistory = (req, res) => {
+  const query =
+    "SELECT * FROM requests WHERE status IN (?, ?) ORDER BY decisionDate DESC";
+  db.query(query, ["approved", "rejected"], (err, results) => {
+    if (err) {
+      console.error("Error fetching history:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+    res.json(results);
+  });
+};
+
+exports.getSubmitted = (req, res) => {
+  const query = "SELECT * FROM requests WHERE status = ?";
+  db.query(query, ["submitted"], (err, results) => {
+    if (err) {
+      console.error("Error fetching pending requests:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+    res.json(results);
+  });
+};
+
+exports.requestMoreInfo = (req, res) => {
+  const requestId = req.params.id;
+  const { message } = req.body;
+
+  if (!message || message.trim() === "") {
+    return res.status(400).json({ message: "Message is required." });
+  }
+
+  const getRequesterQuery =
+    "SELECT user_id AS requester_id FROM requests WHERE id = ?";
+  db.query(getRequesterQuery, [requestId], (err, result) => {
+    if (err || result.length === 0) {
+      console.error("Error finding requester:", err);
+      return res.status(404).json({ message: "Request not found." });
+    }
+
+    const requesterId = result[0].requester_id;
+
+    const insertNotificationQuery = `
+  INSERT INTO notifications (user_id, requestId, message)
+  VALUES (?, ?, ?)
+`;
+
+    db.query(
+      insertNotificationQuery,
+      [requesterId, requestId, message],
+      (insertErr) => {
+        if (insertErr) {
+          console.error("Error saving notification:", insertErr);
+          return res
+            .status(500)
+            .json({ message: "Failed to send info request." });
+        }
+        res.status(200).json({ message: "Info request sent successfully." });
+      }
+    );
+  });
+};
