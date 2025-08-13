@@ -11,7 +11,7 @@ import { SendHorizonal } from "lucide-react";
 const consumerName = "EduApp"; // You missed this in your code!
 
 export default function ProviderChatPage() {
-  const { requestId } = useParams(); // ✅ Correct place
+  const { requestId } = useParams();
 
   const requestDetails = {
     provider: "HealthDept",

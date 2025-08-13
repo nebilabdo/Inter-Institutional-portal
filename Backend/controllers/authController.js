@@ -96,7 +96,7 @@ exports.login = (req, res) => {
       secure: isProd,
       sameSite: "lax",
       path: "/",
-      maxAge: 12 * 60 * 60, // 12 hours in seconds
+      maxAge: 12 * 60 * 60,
     });
 
     res.setHeader("Set-Cookie", cookie);

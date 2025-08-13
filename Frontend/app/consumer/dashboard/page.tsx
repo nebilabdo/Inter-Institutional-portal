@@ -105,19 +105,28 @@ export default function ConsumerDashboard() {
   useEffect(() => {
     async function fetchInstitutions() {
       try {
+        const token = localStorage.getItem("token"); // if JWT token is used
+
         const res = await fetch(
-          "http://localhost:5000/api/requests/institutions"
+          "http://localhost:5000/api/requests/institutions",
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: "include", // if backend uses cookies; otherwise can remove this
+          }
         );
-        if (!res.ok) throw new Error("Failed to fetch institutions");
+
+        if (!res.ok)
+          throw new Error(`Failed to fetch institutions: ${res.status}`);
+
         const data: Institution[] = await res.json();
 
         console.log("Institutions fetched:", data);
 
+        setInstitutions(data);
+
         const activeInstitutionsCount = data.filter(
           (inst) => inst.status?.toLowerCase() === "active"
         ).length;
-
-        console.log("Active institutions count:", activeInstitutionsCount);
 
         setStats((prevStats) => ({
           ...prevStats,
@@ -127,28 +136,12 @@ export default function ConsumerDashboard() {
         console.error("Error fetching institutions:", error);
       }
     }
+
     fetchInstitutions();
   }, []);
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    async function fetchInstitutions() {
-      try {
-        const res = await fetch(
-          "http://localhost:5000/api/requests/institutions"
-        );
-        if (!res.ok) throw new Error("Failed to fetch institutions");
-        const data = await res.json();
-        console.log("Fetched institutions", data);
-        setInstitutions(data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-    fetchInstitutions();
-  }, []);
 
   const [recentRequests, setRecentRequests] = useState<APIRequest[]>([
     {
@@ -245,15 +238,29 @@ export default function ConsumerDashboard() {
   ]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/requests")
-      .then((res) => res.json())
-      .then((data) => {
+    const loadRequests = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/requests/my-requests",
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) throw new Error("Failed to load requests");
+
+        const data: APIRequest[] = await res.json();
+        console.log("Requests fetched:", data); // check the response
         setStats((prev) => ({
           ...prev,
-          totalRequests: data.length,
+          totalRequests: Array.isArray(data) ? data.length : 0,
         }));
-      })
-      .catch((err) => console.error("Failed to fetch requests", err));
+      } catch (err) {
+        console.error("Failed to fetch requests:", err);
+      }
+    };
+
+    loadRequests();
   }, []);
 
   const markNotificationAsRead = (id: number) => {

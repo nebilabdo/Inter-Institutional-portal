@@ -1,20 +1,34 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/requestController");
 
+const requestController = require("../controllers/requestController");
+const providerController = require("../controllers/providerController");
 const authMiddleware = require("../middlewares/auth");
 
-router.post("/", authMiddleware, controller.submitRequest);
-router.get("/", controller.getAllRequests);
-router.get("/notifications", controller.getNotifications);
-router.post("/:id/stop-conversation", controller.stopConversation);
-router.post("/:id/resume-conversation", controller.resumeConversation);
-router.post("/:id/note", controller.saveAdminNote);
-router.get("/institutions", controller.getInstitutions);
-router.post("/:id/approve", controller.approveRequest);
-router.post("/:id/reject", controller.rejectRequest);
-router.get("/submitted", controller.getSubmitted);
-router.get("/history", controller.getHistory);
-router.post("/:id/request-more-info", controller.requestMoreInfo);
+router.post("/", authMiddleware, requestController.submitRequest);
+router.get("/", authMiddleware, providerController.getRequestsForInstitution); // only this
+// router.get(
+//   "/notifications",
+//   authMiddleware,
+//   requestController.getNotifications
+// );
+router.get("/my-requests", authMiddleware, requestController.getMyRequests);
+router.post("/:id/stop-conversation", requestController.stopConversation);
+router.post("/:id/resume-conversation", requestController.resumeConversation);
+router.post("/:id/note", requestController.saveAdminNote);
+
+router.get("/institutions", authMiddleware, requestController.getInstitutions);
+
+router.post("/:id/approve", requestController.approveRequest);
+router.post("/:id/reject", requestController.rejectRequest);
+router.get("/submitted", authMiddleware, requestController.getSubmitted);
+router.get("/history", authMiddleware, requestController.getHistory);
+
+router.post(
+  "/:id/request-more-info",
+  authMiddleware,
+  requestController.requestMoreInfo
+);
+router.get("/stats", requestController.getRequestStats);
 
 module.exports = router;

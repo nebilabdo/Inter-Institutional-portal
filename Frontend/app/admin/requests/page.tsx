@@ -256,19 +256,26 @@ export default function RequestsPage() {
     let csvContent = headers.join(",") + "\n";
 
     const filteredRequests = requests.filter((request) => {
+      const search = searchQuery.toLowerCase();
+
       const matchesSearch =
-        request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.consumerInstitution
+        String(request.id ?? "")
           .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        request.focalPerson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.providerInstitution
+          .includes(search) ||
+        String(request.consumerInstitution ?? "")
           .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+          .includes(search) ||
+        String(request.focalPerson ?? "")
+          .toLowerCase()
+          .includes(search) ||
+        String(request.providerInstitution ?? "")
+          .toLowerCase()
+          .includes(search);
 
       const matchesStatus =
         !statusFilter ||
-        request.status.toLowerCase() === statusFilter.toLowerCase();
+        String(request.status ?? "").toLowerCase() ===
+          statusFilter.toLowerCase();
 
       return matchesSearch && matchesStatus;
     });

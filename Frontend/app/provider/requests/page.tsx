@@ -8,19 +8,33 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, FileText, Clock } from "lucide-react";
 
-type Request = {
+// type Request = {
+//   id: number;
+//   institutionId: string;
+//   institutionName: string;
+//   services: string[][];
+//   title: string;
+//   description: string;
+//   status: string;
+//   createdAt: string;
+//   updatedAt: string;
+//   user_id: number;
+//   date: string;
+//   lastUpdated: string;
+// };
+type MyRequest = {
   id: number;
   institutionId: string;
   institutionName: string;
-  services: string[][];
+  services: string[];
   title: string;
   description: string;
   status: string;
   createdAt: string;
   updatedAt: string;
   user_id: number;
-  date: string;
-  lastUpdated: string;
+  decisionDate: string | null;
+  reason: string | null;
 };
 
 type HistoryItem = {
@@ -34,33 +48,41 @@ type HistoryItem = {
 };
 
 export default function IncomingRequestsPage() {
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<MyRequest[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
+    const loadRequests = async () => {
+      setIsLoading(true);
       try {
-        const reqResponse = await fetch(
-          "http://localhost:5000/api/requests/submitted"
-        );
-        if (!reqResponse.ok)
-          throw new Error("Failed to fetch pending requests");
-        const requestsData: Request[] = await reqResponse.json();
+        // Fetch requests
+        const res = await fetch("http://localhost:5000/api/requests", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to load requests");
 
+        const data: MyRequest[] = await res.json();
+        setRequests(data);
+
+        // Fetch history
         const historyResponse = await fetch(
-          "http://localhost:5000/api/requests/history"
+          "http://localhost:5000/api/requests/history",
+          { credentials: "include" }
         );
         if (!historyResponse.ok) throw new Error("Failed to fetch history");
         const historyData: HistoryItem[] = await historyResponse.json();
 
-        setRequests(requestsData);
+        console.log("History data received:", historyData);
         setHistory(historyData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching requests:", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchData();
+    loadRequests();
   }, []);
 
   // const [history, setHistory] = useState<HistoryItem[]>([
@@ -91,13 +113,16 @@ export default function IncomingRequestsPage() {
   //   },
   // ])
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "—"; // fallback for null/undefined
+    const date = new Date(dateString);
+    return isNaN(date.getTime())
+      ? "Invalid Date"
+      : date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
   };
 
   const handleApprove = async (requestId: number) => {

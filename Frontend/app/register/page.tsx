@@ -67,7 +67,7 @@ export default function RegisterPage() {
             focal_person_phone: formData.focalPersonPhone,
             organization_type: formData.organizationType,
             address: formData.address,
-            contact_info: formData.description, // assuming description is contact info
+            contact_info: formData.description,
           }),
         }
       );

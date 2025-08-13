@@ -36,28 +36,26 @@ exports.createInstitution = (req, res) => {
     return res.status(400).json({ message: "Passwords do not match." });
   }
 
-  const bcrypt = require("bcryptjs");
   const hashedPassword = bcrypt.hashSync(password, 8);
   const servicesJSON = Array.isArray(services)
     ? JSON.stringify(services)
     : null;
 
+  // Step 1: Create institution without storing email/password
   const institutionQuery = `
     INSERT INTO institutions (
-      name, type, contact_person, email, phone, address,
-      username, password, services, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      name, type, contact_person, phone, address,
+      username, services, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
   `;
 
   const institutionValues = [
     name,
     type,
     contactPerson,
-    email,
     phone,
     address,
     username,
-    hashedPassword,
     servicesJSON,
     status || "Active",
   ];
@@ -74,27 +72,23 @@ exports.createInstitution = (req, res) => {
 
     const institutionId = result.insertId;
 
-    // Now insert the contact person as a user
+    // Step 2: Create the user linked to the institution
     const userQuery = `
       INSERT INTO users (email, password_hash, role, institution_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, NOW(), NOW())
     `;
-
-    const userValues = [email, hashedPassword, "ContactPerson", institutionId];
+    const userValues = [email, hashedPassword, "contactperson", institutionId];
 
     db.query(userQuery, userValues, (userErr, userResult) => {
       if (userErr) {
-        console.error(
-          "Failed to insert contact person into users table:",
-          userErr
-        );
+        console.error("Failed to insert user:", userErr);
         return res
           .status(500)
           .json({ message: "Institution created but user creation failed." });
       }
 
       res.status(201).json({
-        message: "Institution and contact person created successfully.",
+        message: "Institution created and user registered successfully.",
         institutionId,
         userId: userResult.insertId,
       });

@@ -11,47 +11,42 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Bell,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  Clock,
-  Trash2,
-  Eye,
-  Activity,
-} from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import Link from "next/link";
 
-// Next.js 13 uses props params for dynamic routes
-interface ProviderNotificationsPageProps {
+type ProviderNotificationsPageProps = {
   params: {
-    requestId: string;
+    providerId: number;
   };
-}
+};
 
 export default function ProviderNotificationsPage({
   params,
 }: ProviderNotificationsPageProps) {
-  const { requestId } = params;
+  const { providerId } = params;
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!requestId) return;
-
     async function fetchNotifications() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/requests/${requestId}/notifications`
-        );
+        const res = await fetch("http://localhost:5000/api/notifications", {
+          credentials: "include", // send cookies for auth
+        });
+
         if (!res.ok) throw new Error("Failed to fetch notifications");
+
         const data = await res.json();
-        setNotifications(data);
+
+        setNotifications(
+          data.map((notif: any) => ({
+            ...notif,
+            read: notif.isRead === 1,
+          }))
+        );
       } catch (e: any) {
         setError(e.message || "Unknown error");
       } finally {
@@ -60,7 +55,33 @@ export default function ProviderNotificationsPage({
     }
 
     fetchNotifications();
-  }, [requestId]);
+  }, []);
+
+  const deleteNotif = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/notifications/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete notification");
+      setNotifications((n) => n.filter((notif) => notif.id !== id));
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch("http://localhost:5000/api/notifications/mark-all-read", {
+        method: "PATCH",
+      });
+
+      setNotifications((n) =>
+        n.map((notif) => ({ ...notif, read: true, isRead: 1 }))
+      );
+    } catch (error) {
+      console.error("Failed to mark all as read", error);
+    }
+  };
 
   // Other utility functions (getIcon, getBadgeVariant, formatTime) same as before ...
 
@@ -107,13 +128,14 @@ export default function ProviderNotificationsPage({
   // Mark read/unread and delete functions should call backend APIs here, but for now,
   // just update local state (we will improve later)
   const markRead = async (id: number) => {
-    // Call backend to mark read
     try {
       await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
-        method: "POST",
+        method: "PATCH", // <-- PATCH here
       });
       setNotifications((n) =>
-        n.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+        n.map((notif) =>
+          notif.id === id ? { ...notif, read: true, isRead: 1 } : notif
+        )
       );
     } catch (error) {
       console.error("Failed to mark read", error);
@@ -121,19 +143,36 @@ export default function ProviderNotificationsPage({
   };
 
   const markUnread = (id: number) => {
-    // No backend API for mark unread? If there is, call it.
+    // Ideally, call backend if API available to mark unread
     setNotifications((n) =>
-      n.map((notif) => (notif.id === id ? { ...notif, read: false } : notif))
+      n.map((notif) =>
+        notif.id === id ? { ...notif, read: false, isRead: 0 } : notif
+      )
     );
   };
 
-  const deleteNotif = (id: number) => {
-    // No backend API for delete? If yes, call it here.
-    setNotifications((n) => n.filter((notif) => notif.id !== id));
+  const deleteNotification = async (id: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/notifications/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete notification");
+      }
+
+      // Remove notification from local state
+      setNotifications((n) => n.filter((notif) => notif.id !== id));
+    } catch (error) {
+      console.error("Failed to delete notification", error);
+    }
   };
 
-  const unread = notifications.filter((n) => !n.read);
-  const read = notifications.filter((n) => n.read);
+  const unread = notifications.filter((n) => n.isRead === 0);
+  const read = notifications.filter((n) => n.isRead === 1);
 
   return (
     <DashboardLayout userRole="provider">
@@ -145,31 +184,21 @@ export default function ProviderNotificationsPage({
               Provider Notifications
             </h1>
             <p className="text-gray-600 mt-2">
-              Manage API requests, approvals, and alerts for request {requestId}
+              Manage API requests, approvals, and alerts for request{" "}
+              {providerId}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="text-sm">
               {unread.length} unread
             </Badge>
-            <Button
-              variant="outline"
-              onClick={() =>
-                setNotifications((n) =>
-                  n.map((notif) => ({ ...notif, read: true }))
-                )
-              }
-            >
+            <Button variant="outline" onClick={markAllAsRead}>
               Mark All as Read
             </Button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">Loading notifications...</div>
-        ) : error ? (
-          <div className="text-center py-12 text-red-600">Error: {error}</div>
-        ) : notifications.length === 0 ? (
+        {notifications.length === 0 ? (
           <div className="text-center py-12">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
             <h3 className="text-lg font-semibold text-gray-600 mb-2">
@@ -179,8 +208,96 @@ export default function ProviderNotificationsPage({
           </div>
         ) : (
           <Tabs defaultValue="unread" className="space-y-6">
-            {/* ... Keep your Tabs & content here exactly as before, but now using notifications from API ... */}
-            {/* To save space, you can reuse your existing render code, just replace notifications with this state */}
+            <TabsList>
+              <TabsTrigger value="unread">
+                <Bell className="mr-2 h-4 w-4" />
+                Unread ({unread.length})
+              </TabsTrigger>
+              <TabsTrigger value="read">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Read ({read.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="unread" className="space-y-4">
+              {unread.map((notif) => (
+                <Card
+                  key={notif.id}
+                  className="p-4 flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    {getIcon(notif.type)}
+                    <div>
+                      <p>{notif.message}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatTime(notif.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => markRead(notif.id)}
+                    >
+                      Mark Read
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteNotification(notif.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+              {unread.length === 0 && (
+                <p className="text-center text-gray-500">
+                  No unread notifications.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="read" className="space-y-4">
+              {read.map((notif) => (
+                <Card
+                  key={notif.id}
+                  className="p-4 flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    {getIcon(notif.type)}
+                    <div>
+                      <p>{notif.message}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatTime(notif.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => markUnread(notif.id)}
+                    >
+                      Mark Unread
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteNotif(notif.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+              {read.length === 0 && (
+                <p className="text-center text-gray-500">
+                  No read notifications.
+                </p>
+              )}
+            </TabsContent>
           </Tabs>
         )}
       </div>

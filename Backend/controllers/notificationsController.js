@@ -54,9 +54,12 @@ exports.addNotification = (req, res) => {
 };
 
 exports.markAsRead = (req, res) => {
-  console.log("📩 Received mark-as-read for ID:", req.params.notificationId);
+  const notificationId = parseInt(req.params.notificationId, 10);
+  if (isNaN(notificationId)) {
+    return res.status(400).json({ error: "Invalid notification ID." });
+  }
 
-  const { notificationId } = req.params;
+  console.log("Received mark-as-read for ID:", notificationId);
 
   db.query(
     "UPDATE notifications SET isRead = TRUE WHERE id = ?",
@@ -74,7 +77,10 @@ exports.markAsRead = (req, res) => {
 };
 
 exports.deleteNotification = (req, res) => {
-  const { notificationId } = req.params;
+  const notificationId = parseInt(req.params.notificationId, 10);
+  if (isNaN(notificationId)) {
+    return res.status(400).json({ error: "Invalid notification ID." });
+  }
 
   db.query(
     "DELETE FROM notifications WHERE id = ?",
@@ -90,3 +96,28 @@ exports.deleteNotification = (req, res) => {
     }
   );
 };
+
+exports.markAllAsRead = (req, res) => {
+  const institutionId = req.user.institutionId;
+
+  const query = `UPDATE notifications SET isRead = 1 WHERE institution_id = ? AND isRead = 0`;
+
+  db.query(query, [institutionId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      message: `Marked ${result.affectedRows} notifications as read.`,
+    });
+  });
+};
+// exports.getNotifications = (req, res) => {
+//   // Basic example: fetch all notifications
+//   const query = "SELECT * FROM notifications ORDER BY created_at DESC";
+
+//   db.query(query, (err, results) => {
+//     if (err) {
+//       console.error("Error fetching notifications:", err);
+//       return res.status(500).json({ message: "Internal server error" });
+//     }
+//     res.json(results);
+//   });
+// };

@@ -48,29 +48,33 @@ export default function NotificationsPage({ userId }: NotificationsPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
+    async function fetchNotifications() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("http://localhost:5000/api/notifications", {
+          credentials: "include", // send cookies for auth
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch notifications");
+
+        const data = await res.json();
+
+        setNotifications(
+          data.map((notif: any) => ({
+            ...notif,
+            read: notif.isRead === 1,
+          }))
+        );
+      } catch (e: any) {
+        setError(e.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
     }
 
-    setLoading(true);
-    setError(null);
-
-    fetch(`/api/notifications/${userId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then((data: Notification[]) => {
-        setNotifications(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch notifications:", error);
-        setError(error.message);
-        setLoading(false);
-      });
-  }, [userId]);
+    fetchNotifications();
+  }, []);
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {

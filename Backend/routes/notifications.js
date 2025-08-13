@@ -1,22 +1,18 @@
 const express = require("express");
 const notificationsController = require("../controllers/notificationsController");
-
+const requestController = require("../controllers/requestController");
+const authMiddleware = require("../middlewares/auth");
 const router = express.Router({ mergeParams: true });
 
-// GET and POST notifications for a request
-router.get("/", notificationsController.getNotificationsByRequestId);
-router.post("/", notificationsController.addNotification);
-router.get("/", notificationsController.getAllNotifications);
+// // Routes for request notifications
+// router.get("/", notificationsController.getNotificationsByRequestId);
+// router.post("/", notificationsController.addNotification);
+// router.get("/all", notificationsController.getAllNotifications);
 
-// Separate router for marking as read
-const readRouter = express.Router();
-readRouter.patch("/:notificationId/read", notificationsController.markAsRead);
-readRouter.delete(
-  "/:notificationId",
-  notificationsController.deleteNotification
-);
+router.get("/", authMiddleware, requestController.getNotifications);
+// Routes for marking read and deleting notifications
+router.patch("/:notificationId/read", notificationsController.markAsRead);
+router.delete("/:notificationId", notificationsController.deleteNotification);
+router.patch("/mark-all-read", notificationsController.markAllAsRead);
 
-module.exports = {
-  requestNotificationsRouter: router,
-  readRouter: readRouter,
-};
+module.exports = router;

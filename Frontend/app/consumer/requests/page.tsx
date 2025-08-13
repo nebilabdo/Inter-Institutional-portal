@@ -66,13 +66,17 @@ export default function MyRequestsPage() {
     const loadRequests = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("http://localhost:5000/api/requests", {
-          credentials: "include", // if you're using cookies/session
-        });
+        const res = await fetch(
+          "http://localhost:5000/api/requests/my-requests",
+          {
+            credentials: "include", // if you're using cookies/session
+          }
+        );
+
         if (!res.ok) throw new Error("Failed to load requests");
 
         const data: APIRequest[] = await res.json();
-        setRequests(data);
+        setRequests(data); // this will now contain only the current user's requests
       } catch (error) {
         console.error("Error fetching requests:", error);
       } finally {
