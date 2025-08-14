@@ -24,6 +24,11 @@ router.post("/:id/reject", requestController.rejectRequest);
 router.get("/submitted", authMiddleware, requestController.getSubmitted);
 router.get("/history", authMiddleware, requestController.getHistory);
 
+router.get(
+  "/universal-requests",
+  authMiddleware,
+  requestController.getInstitutionRequests
+);
 router.post(
   "/:id/request-more-info",
   authMiddleware,

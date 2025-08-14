@@ -55,12 +55,14 @@ export default function LoginPage() {
         router.push("/admin");
       } else if (userRole === "contactperson") {
         router.push("/welcome");
+      } else if (userRole === "universal") {
+        router.push("/universal");
       } else {
         router.push("/");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Unexpected error. Please try again later.");
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 

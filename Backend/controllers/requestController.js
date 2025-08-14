@@ -3,16 +3,25 @@ const db = require("../config/db");
 // Submit Request Controller
 exports.submitRequest = (req, res) => {
   const userId = req.user?.id; // sender user ID
-  const senderInstitutionId = req.user?.institution_id; // sender's institution (for possible audit logging)
-  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  const senderInstitutionId = req.user?.institution_id;
+
+  console.log("Submit request invoked");
+  console.log("req.user:", req.user);
+
+  if (!userId) {
+    console.warn("Unauthorized: no userId found");
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
   const {
-    institutionId, // recipient institution ID
+    institutionId,
     services,
     title,
     description,
     status = "Submitted",
   } = req.body;
+
+  console.log("Request body:", req.body);
 
   // Validate recipient institution
   db.query(
@@ -20,18 +29,21 @@ exports.submitRequest = (req, res) => {
     [institutionId],
     (instErr, instResult) => {
       if (instErr) {
-        console.error(instErr);
+        console.error("Database error fetching institution:", instErr);
         return res.status(500).json({ message: "Database error" });
       }
 
       if (instResult.length === 0) {
+        console.warn("Recipient institution not found for id:", institutionId);
         return res
           .status(404)
           .json({ message: "Recipient institution not found" });
       }
 
       const institutionName = instResult[0].name;
+      console.log("Recipient institution found:", institutionName);
 
+      // Insert request
       const sqlRequest = `
         INSERT INTO requests 
           (user_id, institutionId, institutionName, services, title, description, status, createdAt)
@@ -51,34 +63,37 @@ exports.submitRequest = (req, res) => {
         ],
         (reqErr, reqResult) => {
           if (reqErr) {
-            console.error(reqErr);
+            console.error("Error inserting request:", reqErr);
             return res
               .status(500)
               .json({ message: "Failed to submit request" });
           }
 
           const requestId = reqResult.insertId;
+          console.log("Request inserted with ID:", requestId);
+
           const notificationMessage = `New request submitted: ${title}`;
 
-          // Notify only recipient institution
+          // Insert notification (include user_id!)
           const sqlNotification = `
             INSERT INTO notifications 
-              (requestId, institution_id, message, isRead, createdAt)
-            VALUES (?, ?, ?, false, NOW())
+              (requestId, institution_id, user_id, message, isRead, createdAt)
+            VALUES (?, ?, ?, ?, false, NOW())
           `;
 
           db.query(
             sqlNotification,
-            [requestId, institutionId, notificationMessage],
+            [requestId, institutionId, userId, notificationMessage],
             (notifErr) => {
               if (notifErr) {
-                console.error(notifErr);
+                console.error("Error inserting notification:", notifErr);
                 return res.status(201).json({
                   message:
                     "Request submitted, but failed to notify recipient institution",
                 });
               }
 
+              console.log("Notification inserted for user:", userId);
               res.status(201).json({
                 message:
                   "Request submitted and recipient institution notified successfully",
@@ -122,7 +137,10 @@ exports.sendRequest = (req, res) => {
 
 exports.getInstitutions = (req, res) => {
   db.query("SELECT * FROM institutions", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Error fetching institutions:", err);
+      return res.status(500).json({ error: err.message });
+    }
     res.json(results);
   });
 };
@@ -176,24 +194,44 @@ exports.getAllRequests = (req, res) => {
 
 // controllers/notifications.js
 exports.getNotifications = (req, res) => {
-  const userId = req.params.userId;
+  // Step 1: Log JWT user info
+  console.log("req.user:", req.user);
 
+  if (!req.user || !req.user.id) {
+    console.warn("No user id found in JWT payload!");
+    return res.status(401).json({ error: "Unauthorized: No user ID" });
+  }
+
+  const userId = req.user.id;
+  console.log("Fetching notifications for userId:", userId);
+
+  // Step 2: SQL query
   const sql = `
-  SELECT n.id, n.title, n.message, n.type, n.createdAt as timestamp, 
-         n.isRead, r.id as requestId, r.title as requestTitle, p.name as provider
-  FROM notifications n
-  JOIN requests r ON n.requestId = r.id
-  JOIN providers p ON r.providerId = p.id
-  WHERE n.userId = ?
-  ORDER BY n.createdAt DESC
-`;
+    SELECT n.id, n.title, n.message, n.type, n.createdAt as timestamp, 
+           n.isRead, r.id as requestId, r.title as requestTitle, p.name as provider
+    FROM notifications n
+    JOIN requests r ON n.requestId = r.id
+    JOIN providers p ON r.providerId = p.id
+    WHERE n.userId = ?
+    ORDER BY n.createdAt DESC
+  `;
 
+  console.log("SQL Query:", sql);
+
+  // Step 3: Execute query
   db.query(sql, [userId], (err, results) => {
     if (err) {
-      console.error("Failed to fetch notifications:", err);
+      console.error("SQL error:", err);
       return res.status(500).json({ error: "Internal server error" });
     }
 
+    console.log("Raw DB results:", results);
+
+    if (!results.length) {
+      console.warn(`No notifications found for user ${userId}`);
+    }
+
+    // Step 4: Format results
     const formatted = results.map((n) => ({
       id: n.id,
       title: n.title || `Update for: ${n.requestTitle}`,
@@ -202,10 +240,12 @@ exports.getNotifications = (req, res) => {
         `You have an update for "${n.requestTitle}" from ${n.provider}.`,
       type: n.type || "info",
       timestamp: n.timestamp,
-      read: !!n.isRead, // now consistent
+      read: !!n.isRead,
       requestId: n.requestId,
       provider: n.provider,
     }));
+
+    console.log("Formatted notifications:", formatted);
 
     res.json(formatted);
   });
@@ -420,7 +460,11 @@ exports.requestMoreInfo = (req, res) => {
 exports.getNotifications = (req, res) => {
   const userId = req.user?.id;
 
+  console.log("Incoming request for notifications");
+  console.log("req.user:", req.user);
+
   if (!userId) {
+    console.warn("No userId found in request");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -432,12 +476,35 @@ exports.getNotifications = (req, res) => {
     LIMIT 50
   `;
 
+  console.log("Executing SQL:", query);
+  console.log("With userId:", userId);
+
   db.query(query, [userId], (err, results) => {
     if (err) {
       console.error("Error fetching notifications:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
-    res.json(results);
+
+    console.log("Raw notifications fetched:", results);
+
+    if (results.length === 0) {
+      console.warn("No notifications found for this user.");
+    }
+
+    const formatted = results.map((n) => ({
+      id: n.id,
+      title: n.title || "No title",
+      message: n.message || "No message",
+      type: n.type || "info",
+      timestamp: n.createdAt,
+      read: !!n.isRead,
+      requestId: n.requestId,
+      providerId: n.institution_id,
+    }));
+
+    console.log("Formatted notifications:", formatted);
+
+    res.json(formatted);
   });
 };
 
@@ -461,5 +528,30 @@ exports.getMyRequests = (req, res) => {
     }));
 
     res.json(parsedResults);
+  });
+};
+
+exports.getInstitutionRequests = (req, res) => {
+  const user = req.user; // set by auth middleware
+  if (!user || !user.institution_id) {
+    return res.status(403).json({ message: "Not an institution user" });
+  }
+
+  const sql = "SELECT * FROM universal WHERE JSON_CONTAINS(institution_ids, ?)";
+
+  db.query(sql, [JSON.stringify(user.institution_id)], (err, rows) => {
+    if (err) {
+      console.error("Error fetching requests:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: err.message,
+      });
+    }
+
+    // Optional: only fetch those that haven't been notified yet
+    const filteredRows = rows.filter((row) => row.is_notified === 0);
+
+    res.json({ success: true, requests: filteredRows });
   });
 };

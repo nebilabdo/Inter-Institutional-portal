@@ -10,7 +10,11 @@ const providerRoutes = require("./routes/provider");
 const institutionRoutes = require("./routes/institution");
 const requestRoutes = require("./routes/request");
 const notificationsRoutes = require("./routes/notifications");
+
 const activityRoutes = require("./routes/activity");
+const universalRoutes = require("./routes/universalRoutes");
+
+const universalSetupRouter = require("./routes/universalSetup");
 
 const app = express();
 app.use(logMiddleware);
@@ -24,8 +28,10 @@ app.use(
     credentials: true,
   })
 );
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-app.use(express.json());
+// app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Welcome to the Backend API");
 });
@@ -38,8 +44,11 @@ app.use("/api/requests", requestRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/activity", activityRoutes);
 
+app.use("/api/setup", universalSetupRouter);
 app.use("/api/notifications", notificationsRoutes);
 
+app.use("/uploads", express.static("uploads")); // serve uploaded files
+app.use("/api/submit", universalRoutes);
 const PORT = process.env.PORT;
 app.listen(PORT, () =>
   console.log(`Server running at http://localhost:${PORT}`)

@@ -19,88 +19,96 @@ exports.register = (req, res) => {
       .json({ message: "Only admin registration allowed here" });
   }
 
+  // Check if admin exists
   db.query(
     "SELECT COUNT(*) AS count FROM users WHERE role = 'admin'",
     (err, results) => {
-      if (err) return res.status(500).json({ message: "DB error" });
+      if (err) {
+        console.error("Register error:", err);
+        return res.status(500).json({ message: "Server error" });
+      }
 
       if (results[0].count > 0) {
         return res.status(403).json({ message: "Admin already exists" });
       }
 
-      const hashedPassword = bcrypt.hashSync(password, 8);
-
-      db.query(
-        "INSERT INTO users (email, password_hash, role, institution_id) VALUES (?, ?, ?, NULL)",
-        [email, hashedPassword, role],
-        (err, result) => {
-          if (err) {
-            console.error("Insert error:", err);
-            return res.status(500).json({
-              message: "Failed to register admin",
-              error: err.message,
-            });
-          }
-
-          res
-            .status(201)
-            .json({ message: "Admin registered", userId: result.insertId });
+      // Hash password
+      bcrypt.hash(password, 8, (err, hashedPassword) => {
+        if (err) {
+          console.error("Hash error:", err);
+          return res.status(500).json({ message: "Server error" });
         }
-      );
+
+        // Insert admin
+        db.query(
+          "INSERT INTO users (email, password_hash, role, institution_id) VALUES (?, ?, ?, NULL)",
+          [email, hashedPassword, role],
+          (err, insertResult) => {
+            if (err) {
+              console.error("Insert error:", err);
+              return res.status(500).json({ message: "Server error" });
+            }
+
+            res
+              .status(201)
+              .json({
+                message: "Admin registered",
+                userId: insertResult.insertId,
+              });
+          }
+        );
+      });
     }
   );
 };
 
 exports.login = (req, res) => {
   const { email, password } = req.body;
-
   if (!email || !password)
     return res.status(400).json({ message: "Email and password are required" });
 
-  console.log("Login attempt:", email);
-
   db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
     if (err) {
-      console.error("DB error:", err);
-      return res.status(500).json({ message: "DB error" });
+      console.error("Login error:", err);
+      return res.status(500).json({ message: "Server error" });
     }
 
-    if (results.length === 0) {
-      console.log("User not found");
+    if (results.length === 0)
       return res.status(400).json({ message: "Invalid credentials" });
-    }
 
     const user = results[0];
-    console.log("User found:", user.email, user.role);
 
-    const valid = bcrypt.compareSync(password, user.password_hash);
-    console.log("Password valid:", valid);
+    bcrypt.compare(password, user.password_hash, (err, valid) => {
+      if (err) {
+        console.error("Compare error:", err);
+        return res.status(500).json({ message: "Server error" });
+      }
 
-    if (!valid) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+      if (!valid)
+        return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        institution_id: user.institution_id,
-      },
-      JWT_SECRET,
-      { expiresIn: "12h" }
-    );
+      const token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          institution_id: user.institution_id,
+        },
+        JWT_SECRET,
+        { expiresIn: "12h" }
+      );
 
-    const cookie = serialize("token", token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 12 * 60 * 60,
+      const cookie = serialize("token", token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 12 * 60 * 60,
+      });
+
+      res.setHeader("Set-Cookie", cookie);
+      res.json({ message: "Login successful", token });
     });
-
-    res.setHeader("Set-Cookie", cookie);
-    res.json({ message: "Login successful", token });
   });
 };
 

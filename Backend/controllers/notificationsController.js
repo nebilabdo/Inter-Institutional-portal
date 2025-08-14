@@ -76,6 +76,29 @@ exports.markAsRead = (req, res) => {
   );
 };
 
+exports.markAsUnread = (req, res) => {
+  const notificationId = parseInt(req.params.notificationId, 10);
+  if (isNaN(notificationId)) {
+    return res.status(400).json({ error: "Invalid notification ID." });
+  }
+
+  console.log("Received mark-as-unread for ID:", notificationId);
+
+  db.query(
+    "UPDATE notifications SET isRead = FALSE WHERE id = ?",
+    [notificationId],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Notification not found." });
+      }
+
+      res.json({ message: "Notification marked as unread." });
+    }
+  );
+};
+
 exports.deleteNotification = (req, res) => {
   const notificationId = parseInt(req.params.notificationId, 10);
   if (isNaN(notificationId)) {
@@ -121,3 +144,37 @@ exports.markAllAsRead = (req, res) => {
 //     res.json(results);
 //   });
 // };
+
+// controllers/notificationController.js
+
+exports.getMyNotifications = (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+  const selectSql = `
+    SELECT id, created_at, status 
+    FROM universal 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT 10
+  `;
+
+  db.query(selectSql, [userId], (err, notifications) => {
+    if (err) {
+      console.error("Error fetching notifications:", err);
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
+    }
+
+    const updateSql = `UPDATE universal SET is_notified = TRUE WHERE user_id = ?`;
+    db.query(updateSql, [userId], (updateErr) => {
+      if (updateErr) console.error("Error updating notifications:", updateErr);
+
+      res.json({
+        success: true,
+        data: notifications,
+      });
+    });
+  });
+};
