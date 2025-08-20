@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FaLock, FaCheck } from "react-icons/fa";
 import {
   Card,
   CardContent,
@@ -214,7 +215,7 @@ export default function MyRequestsPage() {
                       <TableHead>Services</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Submitted</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -292,13 +293,14 @@ export default function MyRequestsPage() {
                                 <Download className="h-4 w-4" />
                               </Button>
                             )}
-                            <Link href={`/consumer/${request.id}/chat`}>
+                            <Link href="">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="text-blue-600 bg-blue-50 hover:bg-blue-100"
                               >
-                                <MessageCircle className="h-4 w-4" />
+                                {/* <MessageCircle className="h-4 w-4" /> */}
+                                <FaCheck className="h-4 w-4" />
                               </Button>
                             </Link>
                           </div>

@@ -105,13 +105,13 @@ export default function ConsumerDashboard() {
   useEffect(() => {
     async function fetchInstitutions() {
       try {
-        const token = localStorage.getItem("token"); // if JWT token is used
+        const token = localStorage.getItem("token");
 
         const res = await fetch(
           "http://localhost:5000/api/requests/institutions",
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
-            credentials: "include", // if backend uses cookies; otherwise can remove this
+            credentials: "include",
           }
         );
 
@@ -142,6 +142,7 @@ export default function ConsumerDashboard() {
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  // const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const [recentRequests, setRecentRequests] = useState<APIRequest[]>([
     {
@@ -773,7 +774,7 @@ export default function ConsumerDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   {recentRequests
                     .filter((req) => req.status === "approved")
                     .map((request) => (
@@ -863,7 +864,7 @@ export default function ConsumerDashboard() {
                       </Link>
                     </div>
                   )}
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </TabsContent>

@@ -49,12 +49,10 @@ exports.register = (req, res) => {
               return res.status(500).json({ message: "Server error" });
             }
 
-            res
-              .status(201)
-              .json({
-                message: "Admin registered",
-                userId: insertResult.insertId,
-              });
+            res.status(201).json({
+              message: "Admin registered",
+              userId: insertResult.insertId,
+            });
           }
         );
       });
@@ -128,4 +126,43 @@ exports.logout = (req, res) => {
   res.setHeader("Vary", "Origin");
 
   res.status(200).json({ message: "Logged out successfully" });
+};
+
+exports.me = async (req, res) => {
+  try {
+    const simpleQuery =
+      "SELECT id, email, role, institution_id FROM users WHERE id = ?";
+
+    const [simpleResults] = await db
+      .promise()
+      .query(simpleQuery, [req.user.id]);
+
+    if (simpleResults.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = simpleResults[0];
+    const response = { user };
+
+    if (user.institution_id) {
+      try {
+        const instQuery =
+          "SELECT id, name, contact_person, phone, email, address, type, status, services FROM institutions WHERE id = ?";
+        const [instResults] = await db
+          .promise()
+          .query(instQuery, [user.institution_id]);
+
+        if (instResults.length > 0) {
+          response.institution = instResults[0];
+        }
+      } catch (instError) {}
+    }
+
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({
+      message: "Database error",
+      error: error.message,
+    });
+  }
 };

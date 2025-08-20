@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -15,72 +15,192 @@ import { Textarea as UI_Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import {
-  Building2,
-  User,
-  Save,
-  Key,
-  Bell,
-  Eye,
-  Edit,
-  Shield,
-} from "lucide-react";
+import { Building2, User, Save, Bell, Edit, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useToast } from "@/components/ui/use-toast";
 
-const notificationTypes = ["email", "inApp", "sms"] as const;
-type NotificationType = (typeof notificationTypes)[number];
+interface ProfileData {
+  institutionName: string;
+  address: string;
+  description: string;
+  website: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  institutionType: string;
+  status: string;
+  services: string[];
+}
 
 export default function ProfilePage() {
-  const [profileData, setProfileData] = useState({
-    institutionName: "University of Technology",
-    address: "123 University Avenue, Tech City, TC 12345",
-    website: "https://www.utech.edu",
-    description:
-      "Leading technological university focused on innovation and research in computer science, engineering, and applied sciences.",
-    focalPersonName: "Dr. Sarah Johnson",
-    focalPersonTitle: "Director of IT Services",
-    email: "sarah.johnson@utech.edu",
-    phone: "+1 (555) 123-4567",
-    alternateEmail: "it-services@utech.edu",
-    alternatePhone: "+1 (555) 123-4568",
-    notificationPreferences: {
-      email: true,
-      inApp: true,
-      sms: false,
-    },
-  });
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error("Server returned error:", errData);
+        setError(errData.error || "Unknown server error");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Profile data fetched:", data);
+
+      setUserEmail(data.user?.email || "");
+
+      setProfileData({
+        institutionName: data.institution?.name || "",
+        address: data.institution?.address || "",
+        description: "",
+        website: "",
+        contactPerson: data.institution?.contact_person || "",
+        email: data.user?.email || data.institution?.email || "",
+        phone: data.institution?.phone || "",
+        institutionType: data.institution?.type || "",
+        status: data.institution?.status || "",
+        services: data.institution?.services || [],
+      });
+    } catch (err: any) {
+      console.error("Fetch error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("institution");
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
+    if (!profileData) return;
+
     setProfileData((prev) => ({
-      ...prev,
+      ...prev!,
       [field]: value,
     }));
   };
 
-  const handleNotificationChange = (type: NotificationType, value: boolean) => {
-    setProfileData((prev) => ({
-      ...prev,
-      notificationPreferences: {
-        ...prev.notificationPreferences,
-        [type]: value,
-      },
-    }));
+  const handleSave = async () => {
+    if (!profileData) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch("http://localhost:5000/consumer/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          institutionName: profileData.institutionName,
+          address: profileData.address,
+          contactPerson: profileData.contactPerson,
+          email: profileData.email,
+          phone: profileData.phone,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      const result = await response.json();
+      console.log("Profile update response:", result);
+
+      if (result.institution) {
+        setProfileData((prev) => ({
+          ...prev!,
+          institutionName:
+            result.institution.name || prev?.institutionName || "",
+          address: result.institution.address || prev?.address || "",
+          contactPerson:
+            result.institution.contact_person || prev?.contactPerson || "",
+          phone: result.institution.phone || prev?.phone || "",
+          institutionType:
+            result.institution.type || prev?.institutionType || "",
+          status: result.institution.status || prev?.status || "",
+          services: result.institution.services || prev?.services || [],
+        }));
+      }
+
+      if (result.user?.email) {
+        setUserEmail(result.user.email);
+        setProfileData((prev) => ({
+          ...prev!,
+          email: result.user.email,
+        }));
+      }
+
+      toast({
+        title: "Success",
+        description: result.message || "Profile updated successfully",
+      });
+
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description:
+          error.message || "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSave = () => {
-    console.log("Saving profile data:", profileData);
-    setIsEditing(false);
-  };
+  if (loading) {
+    return (
+      <DashboardLayout userRole="consumer">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin mr-2" />
+          <p>Loading profile...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const apiUsageStats = {
-    totalRequests: 156,
-    approvedAPIs: 8,
-    monthlyUsage: 2340,
-    remainingQuota: 7660,
-  };
+  if (error) {
+    return (
+      <DashboardLayout userRole="consumer">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-red-500">Error: {error}</p>
+          <Button onClick={fetchProfile} className="ml-4">
+            Retry
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <DashboardLayout userRole="consumer">
+        <div className="flex items-center justify-center h-64">
+          <p>No profile data found.</p>
+          <Button onClick={fetchProfile} className="ml-4">
+            Retry
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout userRole="consumer">
@@ -96,11 +216,15 @@ export default function ProfilePage() {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="text-sm">
-              Consumer Account
+              {profileData.status}
+            </Badge>
+            <Badge variant="outline" className="text-sm">
+              {profileData.institutionType}
             </Badge>
             <Button
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "default"}
+              disabled={saving}
             >
               <Edit className="h-4 w-4 mr-2" />
               {isEditing ? "Cancel" : "Edit Profile"}
@@ -117,7 +241,7 @@ export default function ProfilePage() {
           <TabsList className="grid grid-cols-3 w-full lg:w-[500px]">
             <TabsTrigger value="institution">Institution</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
           </TabsList>
 
           {/* Institution Tab */}
@@ -144,18 +268,17 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleInputChange("institutionName", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || saving}
                     />
                   </div>
                   <div className="space-y-2">
-                    <UI_Label htmlFor="website">Website</UI_Label>
+                    <UI_Label htmlFor="institutionType">
+                      Institution Type
+                    </UI_Label>
                     <Input
-                      id="website"
-                      value={profileData.website}
-                      onChange={(e) =>
-                        handleInputChange("website", e.target.value)
-                      }
-                      disabled={!isEditing}
+                      id="institutionType"
+                      value={profileData.institutionType}
+                      disabled={true}
                     />
                   </div>
                 </div>
@@ -168,23 +291,8 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       handleInputChange("address", e.target.value)
                     }
-                    disabled={!isEditing}
+                    disabled={!isEditing || saving}
                     className="min-h-[80px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <UI_Label htmlFor="description">
-                    Institution Description
-                  </UI_Label>
-                  <UI_Textarea
-                    id="description"
-                    value={profileData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    className="min-h-[100px]"
                   />
                 </div>
 
@@ -193,9 +301,19 @@ export default function ProfilePage() {
                     <Button
                       onClick={handleSave}
                       className="bg-blue-600 hover:bg-blue-700"
+                      disabled={saving}
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
@@ -212,38 +330,26 @@ export default function ProfilePage() {
                   Contact Information
                 </CardTitle>
                 <CardDescription>
-                  Primary and alternate contact details
+                  Primary contact details (Email is used for login)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <UI_Label htmlFor="focalPersonName">Full Name *</UI_Label>
+                    <UI_Label htmlFor="contactPerson">
+                      Contact Person *
+                    </UI_Label>
                     <Input
-                      id="focalPersonName"
-                      value={profileData.focalPersonName}
+                      id="contactPerson"
+                      value={profileData.contactPerson}
                       onChange={(e) =>
-                        handleInputChange("focalPersonName", e.target.value)
+                        handleInputChange("contactPerson", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || saving}
                     />
                   </div>
                   <div className="space-y-2">
-                    <UI_Label htmlFor="focalPersonTitle">Job Title</UI_Label>
-                    <Input
-                      id="focalPersonTitle"
-                      value={profileData.focalPersonTitle}
-                      onChange={(e) =>
-                        handleInputChange("focalPersonTitle", e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <UI_Label htmlFor="email">Email Address *</UI_Label>
+                    <UI_Label htmlFor="email">Login Email Address *</UI_Label>
                     <Input
                       id="email"
                       type="email"
@@ -251,9 +357,16 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || saving}
+                      placeholder="This email is used for login"
                     />
+                    <p className="text-sm text-gray-500 mt-1">
+                      This email will be used for logging into the system
+                    </p>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <UI_Label htmlFor="phone">Phone Number *</UI_Label>
                     <Input
@@ -262,39 +375,7 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleInputChange("phone", e.target.value)
                       }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <UI_Label htmlFor="alternateEmail">
-                      Alternate Email
-                    </UI_Label>
-                    <Input
-                      id="alternateEmail"
-                      type="email"
-                      value={profileData.alternateEmail}
-                      onChange={(e) =>
-                        handleInputChange("alternateEmail", e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <UI_Label htmlFor="alternatePhone">
-                      Alternate Phone
-                    </UI_Label>
-                    <Input
-                      id="alternatePhone"
-                      value={profileData.alternatePhone}
-                      onChange={(e) =>
-                        handleInputChange("alternatePhone", e.target.value)
-                      }
-                      disabled={!isEditing}
+                      disabled={!isEditing || saving}
                     />
                   </div>
                 </div>
@@ -304,9 +385,19 @@ export default function ProfilePage() {
                     <Button
                       onClick={handleSave}
                       className="bg-blue-600 hover:bg-blue-700"
+                      disabled={saving}
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
@@ -314,63 +405,33 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
+          {/* Services Tab */}
+          <TabsContent value="services" className="space-y-6">
             <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notification Preferences
+                  <Building2 className="h-5 w-5" />
+                  Institution Services
                 </CardTitle>
                 <CardDescription>
-                  Configure your notification settings
+                  Services provided by your institution
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {notificationTypes.map((type) => (
-                  <div key={type} className="flex items-center justify-between">
-                    <div>
-                      <UI_Label className="text-base capitalize">
-                        {type} Notifications
-                      </UI_Label>
-                      <p className="text-sm text-gray-600">
-                        Receive notifications via{" "}
-                        {type === "inApp" ? "the portal" : type}
-                      </p>
-                    </div>
-                    <Button
-                      variant={
-                        profileData.notificationPreferences[type]
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        handleNotificationChange(
-                          type,
-                          !profileData.notificationPreferences[type]
-                        )
-                      }
-                      disabled={!isEditing}
-                    >
-                      {profileData.notificationPreferences[type]
-                        ? "Enabled"
-                        : "Disabled"}
-                    </Button>
-                  </div>
-                ))}
-
-                {isEditing && (
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleSave}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </Button>
-                  </div>
-                )}
+              <CardContent>
+                <div className="space-y-4">
+                  {profileData.services.length > 0 ? (
+                    <ul className="space-y-2">
+                      {profileData.services.map((service, index) => (
+                        <li key={index} className="flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                          <span>{service}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500">No services listed</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -33,36 +33,120 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+interface UserData {
+  id: number;
+  email: string;
+  role: string;
+  avatar?: string | null;
+  institution_id?: number | null;
+}
+
+interface InstitutionData {
+  id: number;
+  name: string;
+  contact_person?: string;
+  email?: string | null;
+  phone?: string;
+  address?: string;
+  type?: string;
+  status?: string;
+  services?: string[] | string;
+}
+
+interface ApiResponse {
+  user: UserData;
+  institution?: InstitutionData | null;
+}
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  userRole: "admin" | "consumer" | "provider";
+  userRole: "admin" | "consumer" | "provider" | "contactperson";
+}
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<any>;
 }
 
 export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [userData, setUserData] = useState<ApiResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleRefresh = () => {
+  useEffect(() => {
+    if (pathname === "/login") {
+      setLoading(false);
+      return;
+    }
+
+    fetchUserData();
+  }, [pathname]);
+
+  const fetchUserData = async () => {
     try {
-      setIsRefreshing(true);
-      router.refresh(); // Triggers route revalidation
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          if (pathname !== "/login") {
+            router.push("/login");
+          }
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      setUserData(data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
     } finally {
-      setTimeout(() => {
-        setIsRefreshing(false);
-      }, 500); // Show spinner briefly
+      setLoading(false);
+      setAuthChecked(true);
     }
   };
 
-  const handleLogout = () => {
-    // TODO: Add your logout logic here
-    router.push("/login");
+  const handleRefresh = () => {
+    try {
+      setIsRefreshing(true);
+      fetchUserData();
+      router.refresh();
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    }
   };
 
-  const getNavigationItems = () => {
-    switch (userRole) {
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:5000/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setUserData(null);
+      router.push("/login");
+    }
+  };
+
+  const getNavigationItems = (): NavigationItem[] => {
+    if (!userData) return [];
+
+    const role = userData.user.role.toLowerCase();
+
+    switch (role) {
       case "admin":
         return [
           { name: "Dashboard", href: "/admin/dashboard", icon: Home },
@@ -91,6 +175,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
           },
         ];
       case "provider":
+      case "contactperson":
         return [
           { name: "Dashboard", href: "/provider/dashboard", icon: Home },
           {
@@ -111,32 +196,91 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   };
 
   const getUserInfo = () => {
-    switch (userRole) {
-      case "admin":
-        return { name: "Admin User", email: "admin@system.com", avatar: "A" };
-      case "consumer":
-        return {
-          name: "John Consumer",
-          email: "john@university.edu",
-          avatar: "JC",
-        };
-      case "provider":
-        return {
-          name: "Provider User",
-          email: "provider@ministry.gov",
-          avatar: "P",
-        };
-      default:
-        return { name: "User", email: "user@example.com", avatar: "U" };
+    if (!userData) {
+      return null;
     }
+
+    const { user, institution } = userData;
+
+    const name =
+      institution?.contact_person || user.email.split("@")[0] || "User";
+
+    const avatar = name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
+    return {
+      name,
+      email: user.email,
+      avatar,
+      institution: institution?.name,
+      role: user.role,
+    };
   };
 
-  const getProfileUrl = () => {
-    return `/${userRole}/profile`;
+  const getProfileUrl = (): string => {
+    if (!userData) return "/login";
+
+    const role = userData.user.role.toLowerCase();
+
+    const profilePages: Record<string, string> = {
+      admin: "/admin/profile",
+      consumer: "/consumer/profile",
+      provider: "/provider/profile",
+      contactperson: "/consumer/profile",
+    };
+
+    return profilePages[role] || "/profile";
   };
+
+  const getRoleDisplayName = (): string => {
+    if (!userData) return "";
+
+    return (
+      userData.user.role.charAt(0).toUpperCase() + userData.user.role.slice(1)
+    );
+  };
+
+  // Don't render anything if we're on the login page
+  if (pathname === "/login") {
+    return null;
+  }
+
+  if (loading || !authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p>Authentication failed. Please try logging in again.</p>
+          <Button onClick={() => router.push("/login")} className="mt-4">
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const navigationItems = getNavigationItems();
   const userInfo = getUserInfo();
+
+  if (!userInfo) {
+    return null;
+  }
+
+  const roleDisplayName = getRoleDisplayName();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-white transition-colors duration-300">
@@ -172,6 +316,8 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
             <nav className="hidden lg:flex space-x-8">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
+                const IconComponent = item.icon;
+
                 return (
                   <Link
                     key={item.name}
@@ -182,15 +328,26 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
                     }`}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <IconComponent className="h-4 w-4" />
                     <span>{item.name}</span>
                   </Link>
                 );
               })}
             </nav>
 
-            {/* User Menu & Theme Toggle */}
+            {/* User Menu & Actions */}
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -215,8 +372,13 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                       <p className="text-xs leading-none text-muted-foreground">
                         {userInfo.email}
                       </p>
+                      {userInfo.institution && (
+                        <p className="text-xs text-muted-foreground">
+                          {userInfo.institution}
+                        </p>
+                      )}
                       <Badge variant="secondary" className="w-fit text-xs mt-1">
-                        {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                        {roleDisplayName}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
@@ -230,7 +392,6 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                       <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild></DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={(event) => {
@@ -253,6 +414,8 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
+                const IconComponent = item.icon;
+
                 return (
                   <Link
                     key={item.name}
@@ -264,7 +427,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <IconComponent className="h-5 w-5" />
                     <span>{item.name}</span>
                   </Link>
                 );
