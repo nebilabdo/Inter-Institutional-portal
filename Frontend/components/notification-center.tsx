@@ -33,19 +33,12 @@ export const NotificationsProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const searchParams = useSearchParams();
-  const requestId = searchParams.get("requestId");
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    if (!requestId) return;
-
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/requests/${requestId}/notifications`
-        );
+        const res = await fetch("http://localhost:5000/api/notifications");
         if (!res.ok) throw new Error("Failed to fetch notifications");
 
         const raw = await res.json();
@@ -53,12 +46,12 @@ export const NotificationsProvider = ({
         const transformed: Notification[] = raw.map(
           (n: any, index: number) => ({
             id: n.id,
-            type: "info", // You can customize this based on message or type logic
-            title: `Notification #${index + 1}`,
-            message: n.message,
-            details: "", // Add if backend includes more details later
-            time: new Date(n.createdAt).toLocaleString(),
-            read: n.isRead === 1,
+            type: n.type || "info",
+            title: n.title || `Notification #${index + 1}`,
+            message: n.message || "No message available",
+            details: n.details || "",
+            time: new Date(n.timestamp).toLocaleString(),
+            read: n.read || false,
           })
         );
 
@@ -69,7 +62,7 @@ export const NotificationsProvider = ({
     };
 
     fetchNotifications();
-  }, [requestId]);
+  }, []); // Fetch once on mount
 
   return (
     <NotificationsContext.Provider value={{ notifications, setNotifications }}>

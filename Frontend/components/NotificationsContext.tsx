@@ -5,17 +5,15 @@ import React, {
   useContext,
   useState,
   useEffect,
-  type ReactNode,
+  ReactNode,
 } from "react";
-import { useSearchParams } from "next/navigation";
 
-interface Notification {
+export interface Notification {
   id: number;
-  type: "error" | "warning" | "success" | "info" | "default";
+  type: "success" | "warning" | "error" | "info";
   title: string;
   message: string;
-  details: string;
-  time: string;
+  timestamp: string;
   read: boolean;
 }
 
@@ -34,28 +32,35 @@ export const NotificationsProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const searchParams = useSearchParams();
-  const requestId = searchParams.get("requestId");
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [requestId]);
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/requests/${requestId}/notifications`
-      );
-      if (!res.ok) {
-        throw new Error("Failed to fetch notifications");
-      }
+      const res = await fetch("http://localhost:5000/api/notifications", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
-      setNotifications(data);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
+
+      const normalized: Notification[] = data.map((n: any) => ({
+        id: n.id,
+        type: n.type || "info",
+        title: n.title || "Notification",
+        message: n.message || "",
+        timestamp: n.timestamp || new Date().toISOString(),
+        read: n.isRead === 1 || n.read === true,
+      }));
+
+      setNotifications(normalized);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
     }
   };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   return (
     <NotificationsContext.Provider
       value={{ notifications, setNotifications, fetchNotifications }}
@@ -67,10 +72,9 @@ export const NotificationsProvider = ({
 
 export const useNotifications = () => {
   const context = useContext(NotificationsContext);
-  if (context === undefined) {
+  if (!context)
     throw new Error(
-      "useNotifications must be used within a NotificationsProvider"
+      "useNotifications must be used within NotificationsProvider"
     );
-  }
   return context;
 };

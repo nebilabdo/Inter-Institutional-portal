@@ -4,10 +4,10 @@ import type React from "react";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { MessageList } from "@/components/chat/message-list";
-import { MessageInput } from "@/components/chat/message-input";
+// import { MessageList } from "@/components/chat/message-list";
+// import { MessageInput } from "@/components/chat/message-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Message } from "@/types/chat"; // Assuming Message type is defined in types/chat.ts
+// import type { Message } from "@/types/chat"; // Assuming Message type is defined in types/chat.ts
 
 export default function ConsumerRequestChatPage() {
   const params = useParams();
