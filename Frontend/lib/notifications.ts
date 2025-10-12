@@ -33,9 +33,8 @@ const mockNotifications: Notification[] = [
   },
 ];
 
-export async function getNotifications(
-  userId: string
-): Promise<Notification[]> {
+// Individual functions
+async function getNotifications(userId: string): Promise<Notification[]> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const userNotifications = mockNotifications.filter(
@@ -46,9 +45,7 @@ export async function getNotifications(
   });
 }
 
-export async function markNotificationAsRead(
-  notificationId: string
-): Promise<boolean> {
+async function markNotificationAsRead(notificationId: string): Promise<boolean> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const notification = mockNotifications.find(
@@ -64,7 +61,7 @@ export async function markNotificationAsRead(
   });
 }
 
-export async function createNotification(
+async function createNotification(
   notification: Omit<Notification, "id" | "createdAt">
 ): Promise<Notification> {
   return new Promise((resolve) => {
@@ -80,9 +77,7 @@ export async function createNotification(
   });
 }
 
-export async function deleteNotification(
-  notificationId: string
-): Promise<boolean> {
+async function deleteNotification(notificationId: string): Promise<boolean> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const index = mockNotifications.findIndex((n) => n.id === notificationId);
@@ -95,3 +90,11 @@ export async function deleteNotification(
     }, 100);
   });
 }
+
+// ✅ Export as NotificationService
+export const NotificationService = {
+  getNotifications,
+  markNotificationAsRead,
+  createNotification,
+  deleteNotification,
+};
