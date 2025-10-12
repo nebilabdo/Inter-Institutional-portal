@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useNotifications, Notification } from "./NotificationContext"; // Adjust path as needed
+import { NotificationsProvider, useNotifications } from "@/components/NotificationsContext";
+
 import {
   Card,
   CardContent,
