@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { NotificationsProvider, useNotifications } from "@/components/NotificationsContext";
-
+import { NotificationsProvider, useNotifications, Notification } from "@/components/NotificationsContext";
 import {
   Card,
   CardContent,
@@ -25,7 +24,17 @@ import {
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { jsPDF } from "jspdf";
 
+// Wrap the page with NotificationsProvider
 export default function NotificationsPage() {
+  return (
+    <NotificationsProvider>
+      <NotificationsPageContent />
+    </NotificationsProvider>
+  );
+}
+
+// Actual page content
+function NotificationsPageContent() {
   const { notifications, setNotifications, fetchNotifications } =
     useNotifications();
   const [viewingNotification, setViewingNotification] =
@@ -60,19 +69,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    );
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24)
-      return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-  };
-
   const markAsRead = async (id: number) => {
     try {
       await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
@@ -80,7 +76,7 @@ export default function NotificationsPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      await fetchNotifications(); // Refetch notifications after update
+      await fetchNotifications();
     } catch (error) {
       console.error("Failed to mark as read", error);
     }
@@ -93,7 +89,7 @@ export default function NotificationsPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      await fetchNotifications(); // Refetch notifications after update
+      await fetchNotifications();
     } catch (error) {
       console.error("Failed to mark as unread", error);
     }
@@ -256,60 +252,31 @@ function NotificationCard({
       } hover:shadow-md transition-shadow`}
     >
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 mt-1">
-          {getNotificationIcon(notification.type)}
-        </div>
+        <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
         <div className="flex-1 space-y-2">
           <div className="flex items-start justify-between">
-            <h4
-              className={`font-semibold text-lg ${
-                notification.read ? "text-gray-600" : ""
-              }`}
-            >
+            <h4 className={`font-semibold text-lg ${notification.read ? "text-gray-600" : ""}`}>
               {notification.title}
             </h4>
-            <Badge
-              variant={getNotificationBadgeColor(notification.type)}
-              className="text-xs"
-            >
+            <Badge variant={getNotificationBadgeColor(notification.type)} className="text-xs">
               {notification.type}
             </Badge>
           </div>
-          <p className={notification.read ? "text-gray-600" : "text-gray-700"}>
-            {notification.message}
-          </p>
+          <p className={notification.read ? "text-gray-600" : "text-gray-700"}>{notification.message}</p>
           <div className="flex items-center gap-4 text-sm text-gray-500">
             {new Date(notification.timestamp).toLocaleString()}
           </div>
         </div>
       </div>
       <div className="flex justify-end mt-4 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(notification)}
-          className="flex items-center gap-1"
-        >
-          <Eye className="h-4 w-4" />
-          View
+        <Button variant="outline" size="sm" onClick={() => onView(notification)} className="flex items-center gap-1">
+          <Eye className="h-4 w-4" /> View
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportPdf(notification)}
-          className="flex items-center gap-1"
-        >
-          <FileText className="h-4 w-4" />
-          Export PDF
+        <Button variant="outline" size="sm" onClick={() => exportPdf(notification)} className="flex items-center gap-1">
+          <FileText className="h-4 w-4" /> Export PDF
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => markAsRead(notification.id)}
-          className="flex items-center gap-2"
-        >
-          <CheckCircle className="h-4 w-4" />
-          Mark as Read
+        <Button variant="outline" size="sm" onClick={() => markAsRead(notification.id)} className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" /> Mark as Read
         </Button>
       </div>
     </Card>
@@ -341,10 +308,7 @@ function NotificationModal({
       >
         <div className="flex justify-between items-start mb-6">
           <h3 className="text-2xl font-bold">{notification.title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -352,12 +316,8 @@ function NotificationModal({
           <p className="text-gray-700 text-lg">{notification.message}</p>
 
           <div className="flex gap-3 pt-4">
-            <Button
-              onClick={() => exportPdf(notification)}
-              className="flex items-center gap-2"
-            >
-              <FileText size={18} />
-              Export as PDF
+            <Button onClick={() => exportPdf(notification)} className="flex items-center gap-2">
+              <FileText size={18} /> Export as PDF
             </Button>
 
             {notification.read ? (
