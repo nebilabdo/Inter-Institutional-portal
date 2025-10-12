@@ -10,20 +10,29 @@ type User = {
 };
 
 type ProfileProps = {
-  user: User;
+  user?: User; // Make user optional
   onSave: (updatedUser: User) => void;
   onCancel: () => void;
 };
 
 export default function Profile({ user, onSave, onCancel }: ProfileProps) {
-  const [editedUser, setEditedUser] = useState(user);
+  // Fallback user if undefined
+  const defaultUser: User = {
+    name: "",
+    email: "",
+    role: "",
+    initials: "",
+    avatar: "",
+  };
+
+  const [editedUser, setEditedUser] = useState<User>(user || defaultUser);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    user.avatar
+    user?.avatar || null
   );
 
   useEffect(() => {
-    setEditedUser(user);
-    setAvatarPreview(user.avatar);
+    setEditedUser(user || defaultUser);
+    setAvatarPreview(user?.avatar || null);
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,8 +45,9 @@ export default function Profile({ user, onSave, onCancel }: ProfileProps) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-        setEditedUser((prev) => ({ ...prev, avatar: reader.result as string }));
+        const result = reader.result as string;
+        setAvatarPreview(result);
+        setEditedUser((prev) => ({ ...prev, avatar: result }));
       };
       reader.readAsDataURL(file);
     }
@@ -65,7 +75,7 @@ export default function Profile({ user, onSave, onCancel }: ProfileProps) {
                 alt="Avatar Preview"
                 className="w-full h-full object-cover"
               />
-            ) : user.avatar ? (
+            ) : user?.avatar ? (
               <img
                 src={user.avatar}
                 alt="Avatar"
@@ -73,7 +83,7 @@ export default function Profile({ user, onSave, onCancel }: ProfileProps) {
               />
             ) : (
               <span className="text-foreground">
-                {user.initials.charAt(0).toUpperCase()}
+                {user?.initials?.charAt(0).toUpperCase() || ""}
               </span>
             )}
           </div>
