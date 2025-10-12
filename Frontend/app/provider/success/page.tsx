@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
 // Dynamically import the client component
@@ -8,3 +10,4 @@ const SuccessPageClient = dynamic(() => import("./SuccessPageClient"), {
 export default function SuccessPage() {
   return <SuccessPageClient />;
 }
+
