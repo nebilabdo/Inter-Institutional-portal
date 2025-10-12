@@ -83,15 +83,13 @@ const mockRequests: APIRequest[] = [
 ];
 
 // Database functions
-export async function getInstitutions(): Promise<Institution[]> {
+async function getInstitutions(): Promise<Institution[]> {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockInstitutions), 100);
   });
 }
 
-export async function getInstitutionById(
-  id: string
-): Promise<Institution | null> {
+async function getInstitutionById(id: string): Promise<Institution | null> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const institution = mockInstitutions.find((inst) => inst.id === id);
@@ -100,7 +98,7 @@ export async function getInstitutionById(
   });
 }
 
-export async function createInstitution(
+async function createInstitution(
   institution: Omit<Institution, "id" | "createdAt">
 ): Promise<Institution> {
   return new Promise((resolve) => {
@@ -116,7 +114,7 @@ export async function createInstitution(
   });
 }
 
-export async function updateInstitution(
+async function updateInstitution(
   id: string,
   updates: Partial<Institution>
 ): Promise<Institution | null> {
@@ -133,7 +131,7 @@ export async function updateInstitution(
   });
 }
 
-export async function deleteInstitution(id: string): Promise<boolean> {
+async function deleteInstitution(id: string): Promise<boolean> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const index = mockInstitutions.findIndex((inst) => inst.id === id);
@@ -147,13 +145,13 @@ export async function deleteInstitution(id: string): Promise<boolean> {
   });
 }
 
-export async function getAPIRequests(): Promise<APIRequest[]> {
+async function getAPIRequests(): Promise<APIRequest[]> {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockRequests), 100);
   });
 }
 
-export async function createAPIRequest(
+async function createAPIRequest(
   request: Omit<APIRequest, "id" | "submittedDate">
 ): Promise<APIRequest> {
   return new Promise((resolve) => {
@@ -169,7 +167,7 @@ export async function createAPIRequest(
   });
 }
 
-export async function updateAPIRequest(
+async function updateAPIRequest(
   id: string,
   updates: Partial<APIRequest>
 ): Promise<APIRequest | null> {
@@ -185,3 +183,15 @@ export async function updateAPIRequest(
     }, 100);
   });
 }
+
+// ✅ Export everything as DatabaseService
+export const DatabaseService = {
+  getInstitutions,
+  getInstitutionById,
+  createInstitution,
+  updateInstitution,
+  deleteInstitution,
+  getAPIRequests,
+  createAPIRequest,
+  updateAPIRequest,
+};
