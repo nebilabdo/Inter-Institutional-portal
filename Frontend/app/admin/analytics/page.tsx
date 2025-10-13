@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, FileText, Clock, User } from "lucide-react";
 import {
@@ -27,7 +28,18 @@ import {
 } from "recharts";
 import { usePathname } from "next/navigation";
 
-export default function AnalyticsContent() {
+// Disable static prerendering
+export const dynamic = "force-dynamic";
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading Analytics...</div>}>
+      <AnalyticsContent />
+    </Suspense>
+  );
+}
+
+function AnalyticsContent() {
   const pathname = usePathname();
   if (pathname === "/notifications") return null;
 
@@ -54,10 +66,7 @@ export default function AnalyticsContent() {
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-          <Badge
-            variant="secondary"
-            className="bg-red-100 text-red-800 hover:bg-red-200"
-          >
+          <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">
             Administrator
           </Badge>
         </div>
@@ -102,7 +111,7 @@ export default function AnalyticsContent() {
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-blue-500" />
@@ -138,31 +147,13 @@ export default function AnalyticsContent() {
                         barCategoryGap={20}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fontSize: 14, fill: "#64748b" }}
-                        />
+                        <XAxis dataKey="month" tick={{ fontSize: 14, fill: "#64748b" }} />
                         <YAxis tick={{ fontSize: 14, fill: "#64748b" }} />
                         <ChartTooltip />
                         <ChartLegend />
-                        <Bar
-                          dataKey="requests"
-                          fill="#3b82f6"
-                          name="Requests"
-                          radius={[8, 8, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="completed"
-                          fill="#10b981"
-                          name="Completed"
-                          radius={[8, 8, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="failed"
-                          fill="#ef4444"
-                          name="Failed"
-                          radius={[8, 8, 0, 0]}
-                        />
+                        <Bar dataKey="requests" fill="#3b82f6" name="Requests" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="completed" fill="#10b981" name="Completed" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="failed" fill="#ef4444" name="Failed" radius={[8, 8, 0, 0]} />
                       </ReBarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -182,9 +173,7 @@ export default function AnalyticsContent() {
                   <PieChart className="w-5 h-5 text-orange-500" />
                   <span>Request Status Distribution</span>
                 </CardTitle>
-                <CardDescription>
-                  Current distribution of request statuses
-                </CardDescription>
+                <CardDescription>Current distribution of request statuses</CardDescription>
               </CardHeader>
               <CardContent className="w-full flex flex-col items-center">
                 <div className="w-full h-[300px] flex items-center justify-center">
@@ -197,9 +186,7 @@ export default function AnalyticsContent() {
                         cx="50%"
                         cy="50%"
                         outerRadius={90}
-                        label={({ name, percent }) =>
-                          `${name} (${Math.round(percent * 100)}%)`
-                        }
+                        label={({ name, percent }) => `${name} (${Math.round(percent * 100)}%)`}
                       >
                         {statusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -218,18 +205,10 @@ export default function AnalyticsContent() {
 
                 <div className="space-y-3 mt-6 w-full">
                   {statusData.map((item) => (
-                    <div
-                      className="flex items-center justify-between"
-                      key={item.name}
-                    >
+                    <div className="flex items-center justify-between" key={item.name}>
                       <div className="flex items-center space-x-2">
-                        <div
-                          className="w-3 h-3 rounded"
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span className="text-sm text-gray-600 font-semibold">
-                          {item.name}
-                        </span>
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-sm text-gray-600 font-semibold">{item.name}</span>
                       </div>
                       <span className="text-sm font-semibold text-gray-900">
                         {item.value} ({Math.round((item.value / total) * 100)}%)
@@ -249,9 +228,7 @@ export default function AnalyticsContent() {
           <CardTitle className="flex items-center space-x-2">
             <span>Performance Metrics</span>
           </CardTitle>
-          <CardDescription>
-            Key performance indicators and system health metrics
-          </CardDescription>
+          <CardDescription>Key performance indicators and system health metrics</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -268,9 +245,7 @@ export default function AnalyticsContent() {
 /* Helper Components */
 function SummaryCard({ title, icon, value, subtitle, bgColor, textColor }) {
   return (
-    <div
-      className={`${bgColor} rounded-2xl shadow p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl hover:scale-105 cursor-pointer`}
-    >
+    <div className={`${bgColor} rounded-2xl shadow p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl hover:scale-105 cursor-pointer`}>
       <div className="flex items-center justify-between mb-4">
         <span className="text-gray-700 font-medium">{title}</span>
         {icon}
@@ -286,15 +261,10 @@ function ProgressBar({ label, value, color }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-600">{label}</span>
-        <span className={`text-sm font-bold ${color.replace("bg-", "text-")}`}>
-          {value}
-        </span>
+        <span className={`text-sm font-bold ${color.replace("bg-", "text-")}`}>{value}</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2">
-        <div
-          className={`${color} h-2 rounded-full`}
-          style={{ width: value }}
-        ></div>
+        <div className={`${color} h-2 rounded-full`} style={{ width: value }}></div>
       </div>
     </div>
   );
