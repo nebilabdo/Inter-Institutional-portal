@@ -1,10 +1,8 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import type React from "react";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +29,6 @@ import {
   Search,
   User,
   Activity,
-  AlertTriangle,
   X,
 } from "lucide-react";
 import {
@@ -40,11 +37,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { usePathname } from "next/navigation";
 import RegisterInstitutionForm from "./RegisterInstitutionForm";
-import router from "next/router";
 
 export default function InstitutionsPage() {
+  const router = useRouter();
   const pathname = usePathname();
   const [institutionSearchQuery, setInstitutionSearchQuery] = useState("");
   const [institutionStatusFilter, setInstitutionStatusFilter] = useState("all");
@@ -70,7 +66,7 @@ export default function InstitutionsPage() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // required for cookie auth
+            credentials: "include",
           }
         );
 
@@ -90,23 +86,23 @@ export default function InstitutionsPage() {
           ? data.institutions.map((inst) => ({
               ...inst,
               contactPerson: inst.contact_person || "",
+              services: inst.services || [],
+              totalRequests: inst.totalRequests || 0,
+              lastActivity: inst.lastActivity || "-",
             }))
           : [];
 
         setInstitutions(mappedInstitutions);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching institutions:", error);
+        setLoading(false);
       }
     };
 
-    // Initial fetch
     fetchData();
 
-    // Optional global refresh event
-    const refreshHandler = () => {
-      fetchData();
-    };
-
+    const refreshHandler = () => fetchData();
     window.addEventListener("global-refresh", refreshHandler);
     return () => window.removeEventListener("global-refresh", refreshHandler);
   }, [router]);
@@ -137,7 +133,6 @@ export default function InstitutionsPage() {
   });
 
   const institutionsPerPage = 5;
-
   const totalInstitutionsPages = Math.ceil(
     filteredInstitutions.length / institutionsPerPage
   );
@@ -147,8 +142,11 @@ export default function InstitutionsPage() {
     currentInstitutionsPage * institutionsPerPage
   );
 
+  if (loading) return <p className="text-center mt-8">Loading institutions...</p>;
+
   return (
     <div className="space-y-8 px-4 md:px-6 lg:px-12 py-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <Building2 className="w-6 h-6 text-gray-700" />
@@ -165,7 +163,7 @@ export default function InstitutionsPage() {
         </Button>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search & Filters */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -199,18 +197,12 @@ export default function InstitutionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="Government Service">
-              Government Service
-            </SelectItem>
-            <SelectItem value="Government Ministry">
-              Government Ministry
-            </SelectItem>
+            <SelectItem value="Government Service">Government Service</SelectItem>
+            <SelectItem value="Government Ministry">Government Ministry</SelectItem>
             <SelectItem value="Government Commission">
               Government Commission
             </SelectItem>
-            <SelectItem value="Telecommunications">
-              Telecommunications
-            </SelectItem>
+            <SelectItem value="Telecommunications">Telecommunications</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -255,9 +247,7 @@ export default function InstitutionsPage() {
                             <p className="text-sm font-medium text-gray-900">
                               {institution.name}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {institution.id}
-                            </p>
+                            <p className="text-xs text-gray-500">{institution.id}</p>
                           </div>
                         </div>
                       </td>
@@ -281,10 +271,10 @@ export default function InstitutionsPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {institution.totalRequests}
+                        {institution.totalRequests || 0}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {institution.lastActivity}
+                        {institution.lastActivity || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">
@@ -320,19 +310,8 @@ export default function InstitutionsPage() {
                                   setOpenInstitutionDialog("activity");
                                 }}
                               >
-                                <Activity className="w-4 h-4 mr-2" /> View
-                                Activity
+                                <Activity className="w-4 h-4 mr-2" /> View Activity
                               </DropdownMenuItem>
-                              {/* <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedInstitution(institution);
-                                  setOpenInstitutionDialog("suspend");
-                                }}
-                                className="text-red-600 focus:text-red-700"
-                              >
-                                <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />{" "}
-                                Suspend
-                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -341,10 +320,7 @@ export default function InstitutionsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-4 text-center text-gray-500"
-                    >
+                    <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
                       No institutions found matching your criteria.
                     </td>
                   </tr>
@@ -355,6 +331,7 @@ export default function InstitutionsPage() {
         </CardContent>
       </Card>
 
+      {/* Pagination */}
       {totalInstitutionsPages > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
           <p className="text-sm text-gray-700">
@@ -367,41 +344,21 @@ export default function InstitutionsPage() {
             {Math.min(
               currentInstitutionsPage * institutionsPerPage,
               filteredInstitutions.length
-            )}{" "}
-            of {filteredInstitutions.length} institutions
+           
+            )} of {filteredInstitutions.length} institutions
           </p>
-          <div className="flex items-center space-x-2 flex-wrap justify-center sm:justify-end">
+          <div className="flex space-x-2">
             <Button
-              variant="outline"
               size="sm"
-              onClick={() =>
-                setCurrentInstitutionsPage((prev) => Math.max(1, prev - 1))
-              }
               disabled={currentInstitutionsPage === 1}
+              onClick={() => setCurrentInstitutionsPage(currentInstitutionsPage - 1)}
             >
               Previous
             </Button>
-            {Array.from({ length: totalInstitutionsPages }, (_, i) => (
-              <Button
-                key={i + 1}
-                variant={
-                  currentInstitutionsPage === i + 1 ? "default" : "outline"
-                }
-                size="sm"
-                onClick={() => setCurrentInstitutionsPage(i + 1)}
-              >
-                {i + 1}
-              </Button>
-            ))}
             <Button
-              variant="outline"
               size="sm"
-              onClick={() =>
-                setCurrentInstitutionsPage((prev) =>
-                  Math.min(totalInstitutionsPages, prev + 1)
-                )
-              }
               disabled={currentInstitutionsPage === totalInstitutionsPages}
+              onClick={() => setCurrentInstitutionsPage(currentInstitutionsPage + 1)}
             >
               Next
             </Button>
@@ -409,430 +366,73 @@ export default function InstitutionsPage() {
         </div>
       )}
 
-      {selectedInstitution && (
-        <>
-          <Dialog
-            open={openInstitutionDialog === "view"}
-            onOpenChange={() => setOpenInstitutionDialog(null)}
-          >
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  Institution Details: {selectedInstitution.name}
-                </DialogTitle>
-                <DialogDescription>
-                  Comprehensive information about this institution.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Basic Information */}
-                <div>
-                  <h2 className="text-xl font-bold mb-2">Basic Information</h2>
-                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Institution ID:{" "}
-                      </span>
-                      <span className="text-blue-700 font-mono underline cursor-pointer">
-                        {selectedInstitution.id}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Name:{" "}
-                      </span>
-                      <span className="text-gray-900 font-medium">
-                        {selectedInstitution.name}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Type:{" "}
-                      </span>
-                      <span className="text-gray-900">
-                        {selectedInstitution.type}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Status:{" "}
-                      </span>
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                        {selectedInstitution.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Contact Information */}
-                <div>
-                  <h2 className="text-xl font-bold mb-2">
-                    Contact Information
-                  </h2>
-                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Contact Person:{" "}
-                      </span>
-                      <span className="text-gray-900">
-                        {selectedInstitution.contactPerson}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Email:{" "}
-                      </span>
-                      <span className="text-gray-900">
-                        {selectedInstitution.email}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Phone:{" "}
-                      </span>
-                      <span className="text-gray-900">
-                        {selectedInstitution.phone}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">
-                        Address:{" "}
-                      </span>
-                      <span className="text-gray-900">
-                        {selectedInstitution.address}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Services Section */}
-              <div>
-                <h2 className="text-xl font-bold mb-2">Services</h2>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <ul className="list-disc list-inside space-y-1">
-                    {selectedInstitution.services.map(
-                      (service: string, idx: number) => (
-                        <li key={idx} className="text-gray-900">
-                          {service}
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Edit Details Dialog */}
-          {openInstitutionDialog === "edit" && (
-            <Dialog open onOpenChange={() => setOpenInstitutionDialog(null)}>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Edit Institution</DialogTitle>
-                </DialogHeader>
-
-                <div className="max-h-[70vh] overflow-y-auto">
-                  <EditInstitutionForm
-                    institution={selectedInstitution}
-                    onSave={async (updated) => {
-                      try {
-                        const response = await fetch(
-                          `http://localhost:5000/api/institution/${selectedInstitution.id}`,
-                          {
-                            method: "PUT",
-                            headers: {
-                              "Content-Type": "application/json",
-                              // NO Authorization header here
-                            },
-                            credentials: "include", // VERY IMPORTANT to send cookies
-                            body: JSON.stringify(updated),
-                          }
-                        );
-
-                        if (!response.ok) {
-                          const err = await response.json();
-                          throw new Error(err.message || "Update failed");
-                        }
-
-                        setInstitutions((prev) =>
-                          prev.map((inst) =>
-                            inst.id === selectedInstitution.id
-                              ? { ...inst, ...updated }
-                              : inst
-                          )
-                        );
-
-                        setOpenInstitutionDialog(null);
-                        alert("Institution updated successfully!");
-                      } catch (error) {
-                        console.error("Update error:", error);
-                        alert("Failed to update institution.");
-                      }
-                    }}
-                    onCancel={() => setOpenInstitutionDialog(null)}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          {/* View Activity Dialog */}
-
-          <Dialog
-            open={openInstitutionDialog === "activity"}
-            onOpenChange={() => setOpenInstitutionDialog(null)}
-          >
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Institution Activity</DialogTitle>
-
-              {/* your dialog content here */}
-            </DialogContent>
-          </Dialog>
-
-          {/* Suspend Confirmation Dialog */}
-          <Dialog
-            open={openInstitutionDialog === "suspend"}
-            onOpenChange={() => setOpenInstitutionDialog(null)}
-          >
-            <DialogContent className="sm:max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle>Suspend Institution</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to suspend {selectedInstitution.name}?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenInstitutionDialog(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setOpenInstitutionDialog(null);
-                    alert(`Institution ${selectedInstitution.name} suspended!`);
-                  }}
-                >
-                  Suspend
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
-
-      {/* Registration Dialog */}
+      {/* Register Institution Dialog */}
       <Dialog open={openRegisterDialog} onOpenChange={setOpenRegisterDialog}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Register New Institution</DialogTitle>
             <DialogDescription>
-              Fill in the details to register a new institution.
+              Fill out the form below to register a new institution.
             </DialogDescription>
           </DialogHeader>
           <RegisterInstitutionForm
-            onRegister={(inst) => {
-              setInstitutions((prev) => [
-                {
-                  ...inst,
-                  id: `INST-${Date.now()}`,
-                  totalRequests: 0,
-                  answeredRequests: 0,
-                  successRate: "-",
-                  lastActivity: new Date()
-                    .toISOString()
-                    .slice(0, 16)
-                    .replace("T", " "),
-                  registrationDate: new Date().toISOString().slice(0, 10),
-                  roles: ["Consumer"],
-                },
-                ...prev,
-              ]);
-              setOpenRegisterDialog(false);
-            }}
-            onCancel={() => setOpenRegisterDialog(false)}
+            onClose={() => setOpenRegisterDialog(false)}
           />
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
 
-function EditInstitutionForm({
-  institution,
-  onSave,
-  onCancel,
-}: {
-  institution: any;
-  onSave: (inst: any) => void;
-  onCancel: () => void;
-}) {
-  const [form, setForm] = useState({
-    ...institution,
-    services: [...institution.services],
-  });
-  const [newService, setNewService] = useState("");
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleServiceAdd = () => {
-    if (newService.trim()) {
-      setForm({ ...form, services: [...form.services, newService.trim()] });
-      setNewService("");
-    }
-  };
-
-  const handleServiceRemove = (idx: number) => {
-    setForm({
-      ...form,
-      services: form.services.filter((_: any, i: number) => i !== idx),
-    });
-  };
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(form);
-      }}
-      className="space-y-4"
-    >
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-1">
-          Name
-        </label>
-        <Input
-          id="name"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium mb-1">
-          Type
-        </label>
-        <Input
-          id="type"
-          name="type"
-          value={form.type}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      <div>
-        <label htmlFor="status" className="block text-sm font-medium mb-1">
-          Status
-        </label>
-        <Select
-          value={form.status}
-          onValueChange={(value) => setForm({ ...form, status: value })}
+      {/* Institution Action Dialog */}
+      {selectedInstitution && (
+        <Dialog
+          open={!!openInstitutionDialog}
+          onOpenChange={() => setOpenInstitutionDialog(null)}
         >
-          <SelectTrigger id="status" className="w-full">
-            <SelectValue placeholder="Select Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Suspended">Suspended</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <label
-          htmlFor="contactPerson"
-          className="block text-sm font-medium mb-1"
-        >
-          Contact Person
-        </label>
-        <Input
-          id="contactPerson"
-          name="contactPerson"
-          value={form.contactPerson}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">
-          Email
-        </label>
-        <Input
-          id="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      <div>
-        <label htmlFor="phone" className="block text-sm font-medium mb-1">
-          Phone
-        </label>
-        <Input
-          id="phone"
-          name="phone"
-          value={form.phone}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      <div>
-        <label htmlFor="address" className="block text-sm font-medium mb-1">
-          Address
-        </label>
-        <Input
-          id="address"
-          name="address"
-          value={form.address}
-          onChange={handleChange}
-          className="w-full"
-        />
-      </div>
-      {/* Services Section */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Services</label>
-        <div className="space-y-2">
-          {form.services.map((service: string, idx: number) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="flex-1 text-sm">{service}</span>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {openInstitutionDialog === "view" && "View Institution"}
+                {openInstitutionDialog === "edit" && "Edit Institution"}
+                {openInstitutionDialog === "activity" && "Institution Activity"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-4">
+              {openInstitutionDialog === "view" && (
+                <div>
+                  <p><strong>Name:</strong> {selectedInstitution.name}</p>
+                  <p><strong>Type:</strong> {selectedInstitution.type}</p>
+                  <p><strong>Status:</strong> {selectedInstitution.status}</p>
+                  <p><strong>Contact Person:</strong> {selectedInstitution.contactPerson}</p>
+                  <p><strong>Email:</strong> {selectedInstitution.email}</p>
+                  <p><strong>Total Requests:</strong> {selectedInstitution.totalRequests}</p>
+                  <p><strong>Last Activity:</strong> {selectedInstitution.lastActivity}</p>
+                </div>
+              )}
+              {openInstitutionDialog === "edit" && (
+                <RegisterInstitutionForm
+                  institution={selectedInstitution}
+                  onClose={() => setOpenInstitutionDialog(null)}
+                />
+              )}
+              {openInstitutionDialog === "activity" && (
+                <div>
+                  <p>Activity logs for {selectedInstitution.name} will appear here.</p>
+                  {/* You can replace this with real activity data */}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end">
               <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-red-600 hover:text-red-700"
-                onClick={() => handleServiceRemove(idx)}
+                variant="outline"
+                onClick={() => setOpenInstitutionDialog(null)}
               >
-                <X className="w-4 h-4 mr-1" /> Remove
+                Close
               </Button>
             </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <Input
-              type="text"
-              value={newService}
-              onChange={(e) => setNewService(e.target.value)}
-              placeholder="Add new service"
-              className="flex-1"
-            />
-            <Button type="button" onClick={handleServiceAdd}>
-              Add
-            </Button>
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 }
