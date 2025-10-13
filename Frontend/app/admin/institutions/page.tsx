@@ -29,7 +29,6 @@ import {
   Search,
   User,
   Activity,
-  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,9 +62,7 @@ export default function InstitutionsPage() {
           "http://localhost:5000/api/admin/institutions",
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
           }
         );
@@ -76,9 +73,7 @@ export default function InstitutionsPage() {
           return;
         }
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch institutions");
-        }
+        if (!response.ok) throw new Error("Failed to fetch institutions");
 
         const data = await response.json();
 
@@ -101,7 +96,6 @@ export default function InstitutionsPage() {
     };
 
     fetchData();
-
     const refreshHandler = () => fetchData();
     window.addEventListener("global-refresh", refreshHandler);
     return () => window.removeEventListener("global-refresh", refreshHandler);
@@ -120,14 +114,11 @@ export default function InstitutionsPage() {
       );
 
     const matchesStatus =
-      institutionStatusFilter === "" ||
       institutionStatusFilter === "all" ||
       institution.status === institutionStatusFilter;
 
     const matchesType =
-      institutionTypeFilter === "" ||
-      institutionTypeFilter === "all" ||
-      institution.type === institutionTypeFilter;
+      institutionTypeFilter === "all" || institution.type === institutionTypeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -199,9 +190,7 @@ export default function InstitutionsPage() {
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="Government Service">Government Service</SelectItem>
             <SelectItem value="Government Ministry">Government Ministry</SelectItem>
-            <SelectItem value="Government Commission">
-              Government Commission
-            </SelectItem>
+            <SelectItem value="Government Commission">Government Commission</SelectItem>
             <SelectItem value="Telecommunications">Telecommunications</SelectItem>
           </SelectContent>
         </Select>
@@ -344,8 +333,8 @@ export default function InstitutionsPage() {
             {Math.min(
               currentInstitutionsPage * institutionsPerPage,
               filteredInstitutions.length
-           
-            )} of {filteredInstitutions.length} institutions
+            )}{" "}
+            of {filteredInstitutions.length} institutions
           </p>
           <div className="flex space-x-2">
             <Button
@@ -375,9 +364,7 @@ export default function InstitutionsPage() {
               Fill out the form below to register a new institution.
             </DialogDescription>
           </DialogHeader>
-          <RegisterInstitutionForm
-            onClose={() => setOpenRegisterDialog(false)}
-          />
+          <RegisterInstitutionForm onClose={() => setOpenRegisterDialog(false)} />
         </DialogContent>
       </Dialog>
 
@@ -417,7 +404,6 @@ export default function InstitutionsPage() {
               {openInstitutionDialog === "activity" && (
                 <div>
                   <p>Activity logs for {selectedInstitution.name} will appear here.</p>
-                  {/* You can replace this with real activity data */}
                 </div>
               )}
             </div>
