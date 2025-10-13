@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, FileText, Clock, User } from "lucide-react";
 import {
@@ -28,6 +29,15 @@ import {
 import { usePathname } from "next/navigation";
 
 export default function AnalyticsPage() {
+  return (
+    // ✅ Wrap the page in Suspense to handle usePathname()
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading Analytics...</div>}>
+      <AnalyticsContent />
+    </Suspense>
+  );
+}
+
+function AnalyticsContent() {
   const pathname = usePathname();
   if (pathname === "/notifications") return null;
 
@@ -102,7 +112,7 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-blue-500" />
