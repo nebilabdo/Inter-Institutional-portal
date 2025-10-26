@@ -2,5 +2,5 @@
 import DashboardPage from "./dashboard/page";
 
 export default function Page() {
-  return <DashboardPage />;
+  return <Suspense fallback={<div>Loading Dashboard...</div>}><DashboardPage/></Suspense>;
 }
