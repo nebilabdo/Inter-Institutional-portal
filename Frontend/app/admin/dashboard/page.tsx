@@ -22,7 +22,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import { Suspense } from "react";
 import axios from "axios";
 
 interface Institution {
@@ -32,7 +32,8 @@ interface Institution {
   approved: number;
 }
 
-export default function DashboardPage() {
+// Create a separate component that uses useState and useEffect
+function DashboardContent() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState<string>("Loading...");
@@ -103,14 +104,18 @@ export default function DashboardPage() {
     (i) => i.status?.toLowerCase() === "suspended"
   ).length;
 
-  const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("activeTab") || "institutions";
-    }
-    return "institutions";
-  });
+  // Fix localStorage usage - only access it after component mounts
+  const [activeTab, setActiveTab] = useState("institutions");
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // This runs only on client side
+    const savedTab = localStorage.getItem("activeTab");
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -132,6 +137,7 @@ export default function DashboardPage() {
       localStorage.setItem("activeTab", activeTab);
     }
   }, [activeTab]);
+
 
   const stats = [
     {
@@ -246,6 +252,7 @@ export default function DashboardPage() {
     },
   ];
 
+
   return (
     <main className="px-6 py-8">
       <div className="mb-8">
@@ -347,96 +354,7 @@ export default function DashboardPage() {
                       <p className="font-semibold text-amber-900">
                         Pending Approval
                       </p>
-                      <p className="text-2xl font-bold text-amber-700">
-                        {pendingCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="w-8 h-8 text-red-600" />
-                    <div>
-                      <p className="font-semibold text-red-900">Suspended</p>
-                      <p className="text-2xl font-bold text-red-700">
-                        {suspendedCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="activity" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Activity className="w-5 h-5" />
-                <span>System Activity Monitor</span>
-              </CardTitle>
-              <CardDescription>
-                Real-time system performance and user activity tracking
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">
-                    Recent Activities
-                  </h4>
-                  <div className="space-y-3">
-                    {recentActivities.map((activity, i) => (
-                      <div
-                        key={i}
-                        className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors`}
-                        onClick={() => setSelectedActivity(activity)}
-                      >
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            activity.type === "registration"
-                              ? "bg-green-500"
-                              : activity.type === "request"
-                              ? "bg-blue-500"
-                              : activity.type === "failure"
-                              ? "bg-red-500"
-                              : "bg-purple-500"
-                          }`}
-                        ></div>
-                        <span className="text-sm">{activity.title}</span>
-                        <span className="text-xs text-gray-500 ml-auto">
-                          {activity.time}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">
-                    Activity Details
-                  </h4>
-                  {selectedActivity ? (
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${
-                            selectedActivity.type === "registration"
-                              ? "bg-green-500"
-                              : selectedActivity.type === "request"
-                              ? "bg-blue-500"
-                              : selectedActivity.type === "failure"
-                              ? "bg-red-500"
-                              : "bg-purple-500"
-                          }`}
-                        ></div>
-                        <h5 className="font-semibold text-gray-900">
-                          {selectedActivity.title}
-                        </h5>
-                        <span className="text-xs text-gray-500 ml-auto">
-                          {selectedActivity.time}
-                        </span>
-                      </div>
-                      <div className="space-y-3">
+
                         {Object.entries(selectedActivity.details).map(
                           ([key, value]) => (
                             <div
@@ -461,18 +379,31 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="bg-gray-50 p-8 rounded-lg text-center">
-                      {/* <Activity className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <Activity className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500 text-sm">
                         Click on any activity to view detailed information
-                      // </p> 
+                      </p>
                     </div>
                   )}
-                </div> */}
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+// Main component with Suspense boundary
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-lg">Loading Dashboard...</div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
