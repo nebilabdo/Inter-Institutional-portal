@@ -1,6 +1,8 @@
 import { Suspense } from "react"
 import InstitutionsContent from "./institutions-content"
 
+export const dynamic = "force-dynamic"
+
 export default function InstitutionsPage() {
   return (
     <Suspense
