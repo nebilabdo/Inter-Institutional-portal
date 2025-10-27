@@ -1,6 +1,7 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
-// Dynamically import the InstitutionsContent without SSR
 const InstitutionsContent = dynamic(() => import("./InstitutionsContent"), {
   ssr: false,
   loading: () => (
