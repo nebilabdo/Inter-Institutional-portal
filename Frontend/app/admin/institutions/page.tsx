@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import dynamic from 'next/dynamic';
 
-// Dynamically import components to avoid SSR issues
+// Dynamically import ALL components that might use useSearchParams or useRouter
 const InstitutionsContent = dynamic(() => import('./institutions-content'), {
   ssr: false,
   loading: () => (
@@ -18,7 +18,7 @@ const RegisterInstitutionForm = dynamic(() => import('./RegisterInstitutionForm'
   ssr: false,
   loading: () => (
     <div className="flex justify-center items-center min-h-[400px]">
-      <div className="text-lg">Loading form...</div>
+      <div className="text-lg">Loading registration form...</div>
     </div>
   )
 });
