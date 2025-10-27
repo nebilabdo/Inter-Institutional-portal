@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, X } from "react-feather";
+import { useRouter } from "next/navigation";
 
 interface PasswordRequirements {
   hasMinLength: boolean;
@@ -43,6 +45,7 @@ export default function RegisterInstitutionForm({
   onRegister,
   onCancel,
 }: RegisterInstitutionFormProps) {
+  const router = useRouter();
   const [form, setForm] = useState<InstitutionFormData>({
     name: "",
     type: "",
@@ -105,6 +108,7 @@ export default function RegisterInstitutionForm({
   };
 
   const validateForm = (): boolean => {
+    // Validate password
     const {
       hasMinLength,
       hasUpperCase,
@@ -135,6 +139,7 @@ export default function RegisterInstitutionForm({
       return false;
     }
 
+    // Validate password match
     if (form.password !== form.confirmPassword) {
       setPasswordError("Passwords do not match");
       return false;
@@ -188,6 +193,7 @@ export default function RegisterInstitutionForm({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            // Authorization: `Bearer ${token}`,
           },
           credentials: "include",
           body: JSON.stringify(payload),
@@ -196,8 +202,8 @@ export default function RegisterInstitutionForm({
 
       if (response.status === 401 || response.status === 403) {
         alert("Session expired. Please log in again.");
-        // Instead of router.push, reload the page which will trigger auth redirect
-        window.location.href = "/login";
+        router.push("/login");
+
         return;
       }
 
