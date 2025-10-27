@@ -1,569 +1,479 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Search, Building2, Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useSearchParams } from "next/navigation";
+  Bell,
+  Building2,
+  FileText,
+  Users,
+  Activity,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import axios from "axios";
 
-// Component that uses useSearchParams - MUST be wrapped in Suspense
-function SearchableInstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
-  const searchParams = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  // Get initial search from URL params if available
-  useEffect(() => {
-    const urlSearch = searchParams.get('search');
-    if (urlSearch) {
-      setSearch(urlSearch);
-    }
-  }, [searchParams]);
-
-  // Filter institutions based on search
-  const filteredInstitutions = institutions.filter(inst =>
-    inst.name?.toLowerCase().includes(search.toLowerCase()) ||
-    inst.email?.toLowerCase().includes(search.toLowerCase()) ||
-    inst.status?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-lg">Loading institutions...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-        <Input
-          placeholder="Search institutions by name, email, or status..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Institutions</p>
-                <p className="text-2xl font-bold">{institutions.length}</p>
-              </div>
-              <Building2 className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold">
-                  {institutions.filter(i => i.status?.toLowerCase() === 'active').length}
-                </p>
-              </div>
-              <Badge className="bg-green-100 text-green-800">Active</Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold">
-                  {institutions.filter(i => i.status?.toLowerCase() === 'pending').length}
-                </p>
-              </div>
-              <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Suspended</p>
-                <p className="text-2xl font-bold">
-                  {institutions.filter(i => i.status?.toLowerCase() === 'suspended').length}
-                </p>
-              </div>
-              <Badge className="bg-red-100 text-red-800">Suspended</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Institutions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Institutions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredInstitutions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {institutions.length === 0 ? 'No institutions found.' : 'No institutions match your search.'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Registered Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInstitutions.map((institution) => (
-                    <TableRow key={institution.id}>
-                      <TableCell className="font-medium">{institution.name}</TableCell>
-                      <TableCell>{institution.email}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(institution.status)}>
-                          {institution.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{institution.type}</TableCell>
-                      <TableCell>
-                        {institution.createdAt ? new Date(institution.createdAt).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedInstitution(institution);
-                              setViewDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedInstitution(institution);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* View Institution Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Institution Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about {selectedInstitution?.name}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedInstitution && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold mb-2">Basic Information</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Name:</span> {selectedInstitution.name}</div>
-                  <div><span className="font-medium">Email:</span> {selectedInstitution.email}</div>
-                  <div><span className="font-medium">Phone:</span> {selectedInstitution.phone || 'N/A'}</div>
-                  <div><span className="font-medium">Type:</span> {selectedInstitution.type}</div>
-                  <div>
-                    <span className="font-medium">Status:</span>{' '}
-                    <Badge className={getStatusColor(selectedInstitution.status)}>
-                      {selectedInstitution.status}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Additional Details</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Address:</span> {selectedInstitution.address || 'N/A'}</div>
-                  <div><span className="font-medium">Website:</span> {selectedInstitution.website || 'N/A'}</div>
-                  <div><span className="font-medium">Contact Person:</span> {selectedInstitution.contactPerson || 'N/A'}</div>
-                  <div><span className="font-medium">Registered:</span> {selectedInstitution.createdAt ? new Date(selectedInstitution.createdAt).toLocaleDateString() : 'N/A'}</div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete {selectedInstitution?.name} and remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                // Handle delete logic here
-                console.log('Deleting institution:', selectedInstitution?.id);
-                setDeleteDialogOpen(false);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
+interface Institution {
+  id: number;
+  name: string;
+  status: string;
+  approved: number;
 }
 
-// Main Institutions Content wrapped in Suspense
-function InstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
-  return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg">Loading institutions content...</div>
-      </div>
-    }>
-      <SearchableInstitutionsContent institutions={institutions} loading={loading} />
-    </Suspense>
-  );
-}
+// Create a separate component that uses useState and useEffect
+function DashboardContent() {
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalUsers, setTotalUsers] = useState<string>("Loading...");
+  const [usersChange, setUsersChange] = useState<string>("");
 
-// Register Institution Form Component
-function RegisterInstitutionForm({ onRegister, onCancel }: { onRegister: (data: any) => void, onCancel: () => void }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    type: '',
-    website: '',
-    contactPerson: '',
-    description: ''
+  const [institutionStats, setInstitutionStats] = useState({
+    total: "Loading...",
+    change: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onRegister(formData);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      type: '',
-      website: '',
-      contactPerson: '',
-      description: ''
-    });
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Register New Institution
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Institution Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter institution name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter email address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter phone number"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Institution Type *</label>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Type</option>
-                  <option value="bank">Bank</option>
-                  <option value="financial">Financial Institution</option>
-                  <option value="insurance">Insurance Company</option>
-                  <option value="government">Government Agency</option>
-                  <option value="education">Educational Institution</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Website</label>
-                <input
-                  type="url"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Contact Person</label>
-                <input
-                  type="text"
-                  name="contactPerson"
-                  value={formData.contactPerson}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Full name of contact person"
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-gray-700">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter full address"
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Brief description of the institution"
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-4 pt-4">
-              <Button type="submit" className="flex-1">
-                <Plus className="h-4 w-4 mr-2" />
-                Register Institution
-              </Button>
-              <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Main Institutions Page Component
-function InstitutionsPageContent() {
-  const [institutions, setInstitutions] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [hasMounted, setHasMounted] = useState(false);
-
-  // Set mounted state to handle client-side only operations
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
+    const fetchData = async () => {
+      try {
+        const institutionsRes = await axios.get(
+          "http://localhost:5000/api/admin/institutions",
+          {
+            withCredentials: true,
+          }
+        );
 
-  const fetchInstitutions = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/admin/institutions", {
-        credentials: "include",
-      });
-      const data = await res.json();
-      setInstitutions(Array.isArray(data.institutions) ? data.institutions : []);
-    } catch (error) {
-      console.error("Failed to load institutions:", error);
-      setInstitutions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log("Institutions API response:", institutionsRes.data);
 
-  useEffect(() => {
-    fetchInstitutions();
-  }, []);
+        const institutionsData =
+          institutionsRes.data.institutions || institutionsRes.data;
 
-  const handleRegister = async (newInstitution: any) => {
-    try {
-      const response = await fetch("http://localhost:5000/api/admin/institutions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(newInstitution),
-      });
+        if (Array.isArray(institutionsData)) {
+          setInstitutions(institutionsData);
+        } else {
+          setInstitutions([]);
+          console.warn("Institutions data is not an array", institutionsData);
+        }
 
-      if (response.ok) {
-        setShowForm(false);
-        await fetchInstitutions();
-      } else {
-        console.error("Failed to register institution");
+        setInstitutionStats({
+          total: institutionsRes.data.total?.toString() || "0",
+          change: institutionsRes.data.change || "",
+        });
+
+        const usersRes = await axios.get(
+          "http://localhost:5000/api/admin/user-stats",
+          {
+            withCredentials: true,
+          }
+        );
+
+        setTotalUsers(usersRes.data.totalUsers?.toString() || "0");
+        setUsersChange(usersRes.data.change || "");
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setTotalUsers("Error");
+        setUsersChange("");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error registering institution:", error);
-    }
-  };
+    };
 
-  if (loading) {
-    return (
-      <main className="px-6 py-8">
-        <div className="flex justify-center items-center min-h-64">
-          <div className="text-lg">Loading Institutions...</div>
-        </div>
-      </main>
-    );
-  }
+    fetchData();
+  }, []);
+
+  const activeCount = institutions.filter(
+    (i) => i.status?.toLowerCase() === "active"
+  ).length;
+
+  const pendingCount = institutions.filter(
+    (i) => i.status?.trim().toLowerCase() === "pending"
+  ).length;
+
+  const suspendedCount = institutions.filter(
+    (i) => i.status?.toLowerCase() === "suspended"
+  ).length;
+
+  // Fix localStorage usage - only access it after component mounts
+  const [activeTab, setActiveTab] = useState("institutions");
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // This runs only on client side
+    const savedTab = localStorage.getItem("activeTab");
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await axios.get("http://localhost:5000/api/admin/institutions", {
+          withCredentials: true,
+        });
+        // Authenticated, do nothing
+      } catch (error) {
+        router.push("/login");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem("activeTab", activeTab);
+    }
+  }, [activeTab]);
+
+
+
+  const stats = [
+    {
+      title: "Registered Institutions",
+      value: institutionStats.total,
+      change: institutionStats.change,
+      icon: Building2,
+      color: "bg-blue-50 hover:bg-blue-100",
+      iconColor: "text-blue-500",
+      textColor: "text-blue-600",
+    },
+    {
+      title: "Active API Requests",
+      value: "156",
+      change: "+12 this Month",
+      icon: FileText,
+      color: "bg-yellow-50 hover:bg-yellow-100",
+      iconColor: "text-yellow-600",
+      textColor: "text-yellow-700",
+    },
+    {
+      title: "Pending Approvals",
+      value: pendingCount.toString(),
+      change: `${pendingCount} Pending`,
+      icon: Clock,
+      color: "bg-green-50 hover:bg-green-100",
+      iconColor: "text-green-500",
+      textColor: "text-green-600",
+    },
+    {
+      title: "Total Users",
+      value: totalUsers,
+      change: usersChange,
+      icon: Users,
+      color: "bg-purple-50 hover:bg-purple-100",
+      iconColor: "text-purple-500",
+      textColor: "text-purple-600",
+    },
+  ];
+
+  // Add recent activities array
+  const recentActivities = [
+    {
+      type: "registration",
+      title: "New institution registered",
+      time: "2 min ago",
+      details: {
+        institution: "FinTech Solutions Ltd",
+        registrationId: "REG-2024-009",
+        contactPerson: "Alice Johnson",
+        email: "alice.johnson@fintech.com",
+        type: "Financial Technology",
+        status: "Pending Approval",
+        submittedDocuments: [
+          "Business License",
+          "Tax Certificate",
+          "Compliance Report",
+        ],
+        nextSteps: "Awaiting document verification and compliance review",
+      },
+    },
+    {
+      type: "request",
+      title: "Data request completed",
+      time: "5 min ago",
+      details: {
+        requestId: "REQ-2024-006",
+        consumer: "TechCorp Ltd",
+        provider: "DataBank Solutions",
+        dataType: "Customer Credit Scores",
+        recordsProcessed: 1247,
+        processingTime: "3 minutes 45 seconds",
+        dataSize: "1.8 MB",
+        status: "Successfully Completed",
+        focalPerson: "John Smith",
+      },
+    },
+    {
+      type: "failure",
+      title: "Request failed",
+      time: "15 min ago",
+      details: {
+        requestId: "REQ-2024-007",
+        consumer: "FinancePlus",
+        provider: "RiskAssess Corp",
+        dataType: "Risk Assessment for Mortgage Applications",
+        failureReason: "Insufficient data provided",
+        missingItems: ["Customer consent forms", "Income verification"],
+        status: "Failed",
+        focalPerson: "Sarah Johnson",
+        nextSteps: "Consumer needs to resubmit with required documentation",
+      },
+    },
+    {
+      type: "user",
+      title: "Admin user logged in",
+      time: "1 hour ago",
+      details: {
+        userId: "admin@system.com",
+        userName: "System Administrator",
+        loginTime: "2024-01-15 15:30:00",
+        ipAddress: "192.168.1.100",
+        userAgent: "Chrome 120.0.0.0 on Windows 10",
+        sessionDuration: "Active (45 minutes)",
+        actionsPerformed: [
+          "Viewed dashboard",
+          "Checked notifications",
+          "Reviewed requests",
+        ],
+        lastActivity: "Viewing system activity",
+      },
+    },
+  ];
 
   return (
     <main className="px-6 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Institutions Management</h1>
-          <p className="text-gray-600 mt-2">Manage and monitor all registered institutions in the system</p>
+      <div className="mb-8">
+        <div className="flex items-center space-x-3 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <Badge
+            variant="secondary"
+            className="bg-red-100 text-red-800 hover:bg-red-200"
+          >
+            Administrator
+          </Badge>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} size="lg">
-          <Plus className="h-4 w-4 mr-2" />
-          {showForm ? "View All Institutions" : "Register New Institution"}
-        </Button>
+        <p className="text-gray-600">
+          Monitor and manage system operations, user activities, and
+          institutional data
+        </p>
       </div>
 
-      {showForm ? (
-        <RegisterInstitutionForm
-          onRegister={handleRegister}
-          onCancel={() => setShowForm(false)}
-        />
-      ) : (
-        <InstitutionsContent institutions={institutions} loading={loading} />
-      )}
+
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((stat, index) => (
+          <Card
+            key={index}
+            className="bg-white border-0 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+          >
+            <CardContent className="p-4">
+              <div className={`${stat.color} rounded-lg p-4 relative`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      {stat.title}
+                    </p>
+                  </div>
+                  <div
+                    className={`p-2 rounded-lg ${stat.color.split(" ")[0]} ml-2`}
+                  >
+                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                  <p className={`text-sm ${stat.textColor}`}>{stat.change}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
+          <TabsTrigger value="institutions" className="flex items-center space-x-2">
+            <Building2 className="w-4 h-4" />
+            <span>Institutions</span>
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center space-x-2">
+            <Activity className="w-4 h-4" />
+            <span>System Activity</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="institutions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Building2 className="w-5 h-5" />
+                <span>Institution Management</span>
+              </CardTitle>
+              <CardDescription>
+                Manage and monitor registered institutions in the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <p className="font-semibold text-blue-900">Active Institutions</p>
+                      <p className="text-2xl font-bold text-blue-700">{activeCount}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-8 h-8 text-amber-600" />
+                    <div>
+                      <p className="font-semibold text-amber-900">Pending Approval</p>
+                      <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center space-x-3">
+                    <AlertTriangle className="w-8 h-8 text-red-600" />
+                    <div>
+                      <p className="font-semibold text-red-900">Suspended Institutions</p>
+                      <p className="text-2xl font-bold text-red-700">{suspendedCount}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+
+              {/* Example institutions list - replace or expand as needed */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr>
+                      <th className="py-2 text-sm text-gray-600">Name</th>
+                      <th className="py-2 text-sm text-gray-600">Status</th>
+                      <th className="py-2 text-sm text-gray-600">Approved</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {institutions.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-4 text-sm text-gray-500">
+                          No institutions available.
+                        </td>
+                      </tr>
+                    ) : (
+                      institutions.map((inst) => (
+                        <tr key={inst.id} className="border-t">
+                          <td className="py-3 text-sm text-gray-800">{inst.name}</td>
+                          <td className="py-3 text-sm text-gray-600">{inst.status}</td>
+                          <td className="py-3 text-sm text-gray-600">{inst.approved}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Activity tab (moved activity details here) */}
+        <TabsContent value="activity" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="w-5 h-5" />
+                <span>System Activity</span>
+              </CardTitle>
+              <CardDescription>Recent system activities and request logs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="col-span-1 lg:col-span-1">
+                  <div className="space-y-2">
+                    {recentActivities.map((act, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedActivity(act)}
+                        className={`w-full text-left p-3 rounded-lg border ${selectedActivity === act ? "border-blue-300 bg-blue-50" : "border-gray-100 hover:bg-gray-50"}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{act.title}</p>
+                            <p className="text-xs text-gray-500">{act.time}</p>
+                          </div>
+                          <div>
+                            <Badge className="ml-2">{act.type}</Badge>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+
+
+                <div className="col-span-1 lg:col-span-2">
+                  {selectedActivity && selectedActivity.details ? (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-2">{selectedActivity.title}</h3>
+                      <div className="space-y-2">
+                        {Object.entries(selectedActivity.details).map(([key, value]) => (
+                          <div key={key} className="flex justify-between items-start">
+                            <span className="text-sm font-medium text-gray-600 capitalize">
+                              {key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}:
+                            </span>
+                            <span className="text-sm text-gray-900 text-right max-w-xs">
+                              {Array.isArray(value) ? value.join(", ") : String(value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-8 rounded-lg text-center">
+                      <Activity className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">Click on any activity to view detailed information</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
 
 // Main component with Suspense boundary
-export default function InstitutionsPage() {
+export default function DashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-lg">Loading Institutions Page...</div>
-      </div>
-    }>
-      <InstitutionsPageContent />
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-lg">Loading Dashboard...</div>
+        </div>
+      }
+    >
+      <DashboardContent />
     </Suspense>
   );
 }
