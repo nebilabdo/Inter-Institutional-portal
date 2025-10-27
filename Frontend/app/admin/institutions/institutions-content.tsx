@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -34,21 +33,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-// Inner component that uses useSearchParams
-function InstitutionsContentInner({ institutions, loading }: { institutions: any[], loading: boolean }) {
-  const searchParams = useSearchParams();
+export default function InstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
   const [search, setSearch] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  // Get initial search from URL params if available
-  useEffect(() => {
-    const urlSearch = searchParams.get('search');
-    if (urlSearch) {
-      setSearch(urlSearch);
-    }
-  }, [searchParams]);
 
   // Filter institutions based on search
   const filteredInstitutions = institutions.filter(inst =>
@@ -282,18 +271,5 @@ function InstitutionsContentInner({ institutions, loading }: { institutions: any
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-// Main component wrapped in Suspense
-export default function InstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
-  return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg">Loading institutions content...</div>
-      </div>
-    }>
-      <InstitutionsContentInner institutions={institutions} loading={loading} />
-    </Suspense>
   );
 }
