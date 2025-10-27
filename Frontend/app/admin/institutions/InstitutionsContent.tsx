@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,14 +39,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import dynamic from "next/dynamic";
 
-// Dynamically import RegisterInstitutionForm to avoid SSR issues
+// Dynamically import RegisterInstitutionForm
 const RegisterInstitutionForm = dynamic(() => import("./RegisterInstitutionForm"), {
   ssr: false,
   loading: () => <div>Loading form...</div>
 });
 
-// Create a client component that uses the router
-function InstitutionsContentClient() {
+export default function InstitutionsContent() {
+  const router = useRouter();
   const [institutionSearchQuery, setInstitutionSearchQuery] = useState("");
   const [institutionStatusFilter, setInstitutionStatusFilter] = useState("all");
   const [institutionTypeFilter, setInstitutionTypeFilter] = useState("all");
@@ -74,6 +75,7 @@ function InstitutionsContentClient() {
 
         if (response.status === 401 || response.status === 403) {
           alert("Session expired. Please log in again.");
+          router.push("/login");
           return;
         }
 
@@ -106,7 +108,7 @@ function InstitutionsContentClient() {
 
     window.addEventListener("global-refresh", refreshHandler);
     return () => window.removeEventListener("global-refresh", refreshHandler);
-  }, []);
+  }, [router]);
 
   const filteredInstitutions = institutions.filter((institution) => {
     const matchesSearch =
@@ -285,10 +287,10 @@ function InstitutionsContentClient() {
                         </Badge>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {institution.totalRequests}
+                        {institution.totalRequests || 0}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {institution.lastActivity}
+                        {institution.lastActivity || "No activity"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">
@@ -612,11 +614,6 @@ function InstitutionsContentClient() {
       </Dialog>
     </div>
   );
-}
-
-// Main component that doesn't use any hooks during SSR
-export default function InstitutionsContent() {
-  return <InstitutionsContentClient />;
 }
 
 function EditInstitutionForm({
