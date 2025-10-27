@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, X } from "react-feather";
-import { useRouter } from "next/navigation";
 
 interface PasswordRequirements {
   hasMinLength: boolean;
@@ -40,12 +39,10 @@ interface RegisterInstitutionFormProps {
   onCancel: () => void;
 }
 
-// Inner component that uses useRouter (which uses useSearchParams internally)
-function RegisterInstitutionFormInner({
+export default function RegisterInstitutionForm({
   onRegister,
   onCancel,
 }: RegisterInstitutionFormProps) {
-  const router = useRouter();
   const [form, setForm] = useState<InstitutionFormData>({
     name: "",
     type: "",
@@ -108,7 +105,6 @@ function RegisterInstitutionFormInner({
   };
 
   const validateForm = (): boolean => {
-    // Validate password
     const {
       hasMinLength,
       hasUpperCase,
@@ -139,7 +135,6 @@ function RegisterInstitutionFormInner({
       return false;
     }
 
-    // Validate password match
     if (form.password !== form.confirmPassword) {
       setPasswordError("Passwords do not match");
       return false;
@@ -201,7 +196,8 @@ function RegisterInstitutionFormInner({
 
       if (response.status === 401 || response.status === 403) {
         alert("Session expired. Please log in again.");
-        router.push("/login");
+        // Instead of router.push, reload the page which will trigger auth redirect
+        window.location.href = "/login";
         return;
       }
 
@@ -549,21 +545,5 @@ function RegisterInstitutionFormInner({
         </Button>
       </div>
     </form>
-  );
-}
-
-// Main component wrapped in Suspense
-export default function RegisterInstitutionForm({
-  onRegister,
-  onCancel,
-}: RegisterInstitutionFormProps) {
-  return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg">Loading form...</div>
-      </div>
-    }>
-      <RegisterInstitutionFormInner onRegister={onRegister} onCancel={onCancel} />
-    </Suspense>
   );
 }
