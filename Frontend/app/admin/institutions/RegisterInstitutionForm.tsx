@@ -193,7 +193,6 @@ function RegisterInstitutionFormInner({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Authorization: `Bearer ${token}`,
           },
           credentials: "include",
           body: JSON.stringify(payload),
@@ -203,7 +202,6 @@ function RegisterInstitutionFormInner({
       if (response.status === 401 || response.status === 403) {
         alert("Session expired. Please log in again.");
         router.push("/login");
-
         return;
       }
 
