@@ -2,28 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import dynamic from 'next/dynamic';
 
-// Dynamically import ALL components that might use useSearchParams or useRouter
-const InstitutionsContent = dynamic(() => import('./institutions-content'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex justify-center items-center min-h-[400px]">
-      <div className="text-lg">Loading institutions...</div>
-    </div>
-  )
-});
+// Import components normally since the parent has SSR disabled
+import InstitutionsContent from './institutions-content';
+import RegisterInstitutionForm from './RegisterInstitutionForm';
 
-const RegisterInstitutionForm = dynamic(() => import('./RegisterInstitutionForm'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex justify-center items-center min-h-[400px]">
-      <div className="text-lg">Loading registration form...</div>
-    </div>
-  )
-});
-
-export default function InstitutionsPage() {
+export default function InstitutionsPageContent() {
   const [institutions, setInstitutions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
