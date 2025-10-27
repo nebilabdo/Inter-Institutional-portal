@@ -32,13 +32,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSearchParams } from "next/navigation";
 
-// Institutions Content Component with SearchParams handling
-function InstitutionsContentInternal({ institutions, loading }: { institutions: any[], loading: boolean }) {
+// Component that uses useSearchParams - must be wrapped in Suspense
+function SearchableInstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Get initial search from URL params if available
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearch(urlSearch);
+    }
+  }, [searchParams]);
 
   // Filter institutions based on search
   const filteredInstitutions = institutions.filter(inst =>
@@ -275,6 +285,19 @@ function InstitutionsContentInternal({ institutions, loading }: { institutions: 
   );
 }
 
+// Main Institutions Content wrapped in Suspense
+function InstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Loading institutions content...</div>
+      </div>
+    }>
+      <SearchableInstitutionsContent institutions={institutions} loading={loading} />
+    </Suspense>
+  );
+}
+
 // Register Institution Form Component
 function RegisterInstitutionForm({ onRegister, onCancel }: { onRegister: (data: any) => void, onCancel: () => void }) {
   const [formData, setFormData] = useState({
@@ -471,7 +494,6 @@ export default function InstitutionsPage() {
 
   const handleRegister = async (newInstitution: any) => {
     try {
-      // Simulate API call to register new institution
       const response = await fetch("http://localhost:5000/api/admin/institutions", {
         method: "POST",
         headers: {
@@ -483,7 +505,7 @@ export default function InstitutionsPage() {
 
       if (response.ok) {
         setShowForm(false);
-        await fetchInstitutions(); // Refresh the list
+        await fetchInstitutions();
       } else {
         console.error("Failed to register institution");
       }
@@ -511,13 +533,7 @@ export default function InstitutionsPage() {
           onCancel={() => setShowForm(false)}
         />
       ) : (
-        <Suspense fallback={
-          <div className="flex justify-center items-center min-h-[400px]">
-            <div className="text-lg">Loading institutions content...</div>
-          </div>
-        }>
-          <InstitutionsContentInternal institutions={institutions} loading={loading} />
-        </Suspense>
+        <InstitutionsContent institutions={institutions} loading={loading} />
       )}
     </main>
   );
