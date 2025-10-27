@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import InstitutionsContent from "./InstitutionsContentInner";
+import InstitutionsContent from "./institutions-content";
 import RegisterInstitutionForm from "./RegisterInstitutionForm";
 import { Button } from "@/components/ui/button";
 
