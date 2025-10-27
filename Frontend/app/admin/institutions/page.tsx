@@ -1,7 +1,25 @@
+// Frontend/app/admin/institutions/page.tsx
+"use client";
+
+import { Suspense } from 'react';
+import InstitutionsContent from './InstitutionsContent';
+
+export default function InstitutionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <div>Loading Institutions...</div>
+      </div>
+    }>
+      <InstitutionsContent />
+    </Suspense>
+  );
+}
+
+// Frontend/app/admin/institutions/InstitutionsContent.tsx
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -42,10 +60,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import RegisterInstitutionForm from "./RegisterInstitutionForm";
-import router from "next/router";
 
-export default function InstitutionsPage() {
+export default function InstitutionsContent() {
   const pathname = usePathname();
+  const router = useRouter();
   const [institutionSearchQuery, setInstitutionSearchQuery] = useState("");
   const [institutionStatusFilter, setInstitutionStatusFilter] = useState("all");
   const [institutionTypeFilter, setInstitutionTypeFilter] = useState("all");
@@ -70,7 +88,7 @@ export default function InstitutionsPage() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // required for cookie auth
+            credentials: "include",
           }
         );
 
@@ -96,6 +114,8 @@ export default function InstitutionsPage() {
         setInstitutions(mappedInstitutions);
       } catch (error) {
         console.error("Error fetching institutions:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -146,6 +166,14 @@ export default function InstitutionsPage() {
     (currentInstitutionsPage - 1) * institutionsPerPage,
     currentInstitutionsPage * institutionsPerPage
   );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div>Loading institutions...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 px-4 md:px-6 lg:px-12 py-8">
@@ -323,16 +351,6 @@ export default function InstitutionsPage() {
                                 <Activity className="w-4 h-4 mr-2" /> View
                                 Activity
                               </DropdownMenuItem>
-                              {/* <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedInstitution(institution);
-                                  setOpenInstitutionDialog("suspend");
-                                }}
-                                className="text-red-600 focus:text-red-700"
-                              >
-                                <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />{" "}
-                                Suspend
-                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -509,13 +527,13 @@ export default function InstitutionsPage() {
                 <h2 className="text-xl font-bold mb-2">Services</h2>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <ul className="list-disc list-inside space-y-1">
-                    {selectedInstitution.services.map(
+                    {selectedInstitution.services?.map(
                       (service: string, idx: number) => (
                         <li key={idx} className="text-gray-900">
                           {service}
                         </li>
                       )
-                    )}
+                    ) || <li>No services available</li>}
                   </ul>
                 </div>
               </div>
@@ -541,9 +559,8 @@ export default function InstitutionsPage() {
                             method: "PUT",
                             headers: {
                               "Content-Type": "application/json",
-                              // NO Authorization header here
                             },
-                            credentials: "include", // VERY IMPORTANT to send cookies
+                            credentials: "include",
                             body: JSON.stringify(updated),
                           }
                         );
@@ -576,46 +593,14 @@ export default function InstitutionsPage() {
           )}
 
           {/* View Activity Dialog */}
-
           <Dialog
             open={openInstitutionDialog === "activity"}
             onOpenChange={() => setOpenInstitutionDialog(null)}
           >
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogTitle>Institution Activity</DialogTitle>
-
-              {/* your dialog content here */}
-            </DialogContent>
-          </Dialog>
-
-          {/* Suspend Confirmation Dialog */}
-          <Dialog
-            open={openInstitutionDialog === "suspend"}
-            onOpenChange={() => setOpenInstitutionDialog(null)}
-          >
-            <DialogContent className="sm:max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle>Suspend Institution</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to suspend {selectedInstitution.name}?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenInstitutionDialog(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setOpenInstitutionDialog(null);
-                    alert(`Institution ${selectedInstitution.name} suspended!`);
-                  }}
-                >
-                  Suspend
-                </Button>
+              <div className="p-4">
+                <p>Activity details for {selectedInstitution.name}</p>
               </div>
             </DialogContent>
           </Dialog>
@@ -670,7 +655,7 @@ function EditInstitutionForm({
 }) {
   const [form, setForm] = useState({
     ...institution,
-    services: [...institution.services],
+    services: [...(institution.services || [])],
   });
   const [newService, setNewService] = useState("");
 
