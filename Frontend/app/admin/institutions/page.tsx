@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useSearchParams } from "next/navigation";
 
-// Component that uses useSearchParams - must be wrapped in Suspense
+// Component that uses useSearchParams - MUST be wrapped in Suspense
 function SearchableInstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
@@ -468,10 +468,16 @@ function RegisterInstitutionForm({ onRegister, onCancel }: { onRegister: (data: 
 }
 
 // Main Institutions Page Component
-export default function InstitutionsPage() {
+function InstitutionsPageContent() {
   const [institutions, setInstitutions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // Set mounted state to handle client-side only operations
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const fetchInstitutions = async () => {
     try {
@@ -514,6 +520,16 @@ export default function InstitutionsPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <main className="px-6 py-8">
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg">Loading Institutions...</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="px-6 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -536,5 +552,18 @@ export default function InstitutionsPage() {
         <InstitutionsContent institutions={institutions} loading={loading} />
       )}
     </main>
+  );
+}
+
+// Main component with Suspense boundary
+export default function InstitutionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-lg">Loading Institutions Page...</div>
+      </div>
+    }>
+      <InstitutionsPageContent />
+    </Suspense>
   );
 }
