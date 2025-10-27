@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import dynamic from "next/dynamic";
 
-// Dynamically import the entire content with no SSR
+// Dynamically import the InstitutionsContent without SSR
 const InstitutionsContent = dynamic(() => import("./InstitutionsContent"), {
   ssr: false,
   loading: () => (
@@ -12,13 +11,5 @@ const InstitutionsContent = dynamic(() => import("./InstitutionsContent"), {
 });
 
 export default function InstitutionsPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-screen">
-        Loading institutions...
-      </div>
-    }>
-      <InstitutionsContent />
-    </Suspense>
-  );
+  return <InstitutionsContent />;
 }
