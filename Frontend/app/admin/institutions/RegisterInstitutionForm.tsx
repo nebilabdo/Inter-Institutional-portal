@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -41,7 +40,8 @@ interface RegisterInstitutionFormProps {
   onCancel: () => void;
 }
 
-export default function RegisterInstitutionForm({
+// Inner component that uses useRouter (which uses useSearchParams internally)
+function RegisterInstitutionFormInner({
   onRegister,
   onCancel,
 }: RegisterInstitutionFormProps) {
@@ -551,5 +551,21 @@ export default function RegisterInstitutionForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+// Main component wrapped in Suspense
+export default function RegisterInstitutionForm({
+  onRegister,
+  onCancel,
+}: RegisterInstitutionFormProps) {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Loading form...</div>
+      </div>
+    }>
+      <RegisterInstitutionFormInner onRegister={onRegister} onCancel={onCancel} />
+    </Suspense>
   );
 }
