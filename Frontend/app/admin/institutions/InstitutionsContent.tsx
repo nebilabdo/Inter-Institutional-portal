@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import {Suspense} from "react"
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -602,6 +603,7 @@ export default function InstitutionsContent() {
               Fill in the details to register a new institution.
             </DialogDescription>
           </DialogHeader>
+          <Suspense fallback={<div>Loading form...</div>}>
           <RegisterInstitutionForm
             onRegister={(inst) => {
               setInstitutions((prev) => [
@@ -624,6 +626,7 @@ export default function InstitutionsContent() {
             }}
             onCancel={() => setOpenRegisterDialog(false)}
           />
+          </Suspense>
         </DialogContent>
       </Dialog>
     </div>
