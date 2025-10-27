@@ -32,19 +32,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSearchParams } from "next/navigation";
 
-// Institutions Content Component
-function InstitutionsContentInternal({ institutions, loading }: { institutions: any[], loading: boolean }) {
+// Component that uses useSearchParams - MUST be wrapped in Suspense
+function SearchableInstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
 
-  // Set mounted state to handle client-side only operations
+  // Get initial search from URL params if available
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearch(urlSearch);
+    }
+  }, [searchParams]);
 
   // Filter institutions based on search
   const filteredInstitutions = institutions.filter(inst =>
@@ -278,6 +282,19 @@ function InstitutionsContentInternal({ institutions, loading }: { institutions: 
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// Main Institutions Content wrapped in Suspense
+function InstitutionsContent({ institutions, loading }: { institutions: any[], loading: boolean }) {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Loading institutions content...</div>
+      </div>
+    }>
+      <SearchableInstitutionsContent institutions={institutions} loading={loading} />
+    </Suspense>
   );
 }
 
@@ -532,7 +549,7 @@ function InstitutionsPageContent() {
           onCancel={() => setShowForm(false)}
         />
       ) : (
-        <InstitutionsContentInternal institutions={institutions} loading={loading} />
+        <InstitutionsContent institutions={institutions} loading={loading} />
       )}
     </main>
   );
